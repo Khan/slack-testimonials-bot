@@ -1,0 +1,18 @@
+runtime: python
+vm: true
+module: listener
+entrypoint: python listener.py
+
+manual_scaling:
+  instances: 1
+
+skip_files:
+ - ^(.*/)?#.*#$
+ - ^(.*/)?.*~$
+ - ^(.*/)?.*\.py[co]$
+ - ^(.*/)?.*/RCS/.*$
+ - ^(.*/)?\..*$
+ - ^Makefile$
+ - ^alertlib-src/.*$
+ - ^python-slackclient-src/.*$
+

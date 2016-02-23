@@ -21,3 +21,6 @@ def listen():
         logging.critical(messages)
         time.sleep(1)
 
+
+if __name__ == '__main__':
+    listen()
