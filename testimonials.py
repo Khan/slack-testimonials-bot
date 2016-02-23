@@ -1,4 +1,5 @@
 """STOPSHIP:docstring"""
+import copy
 import datetime
 import json
 import logging
@@ -9,6 +10,8 @@ import slackclient
 
 import secrets
 
+# STOPSHIP: use debug flag of some sort to toggle b/w real and fake channels
+_MAIN_KA_CHANNEL = "#secret-khan-academy"
 _TESTIMONIALS_CHANNEL = "#testimonials-test"
 # Channel ID grabbed from https://api.slack.com/methods/channels.list/test
 _TESTIMONIALS_CHANNEL_ID = "C0NFLU9UG"
@@ -16,7 +19,9 @@ _TESTIMONIALS_SENDER = "Testimonials Turtle"
 _TESTIMONIALS_EMOJI = ":turtle:"
 _TESTIMONIALS_SLACK_BOT_USER_ID = "U0NJ3M8KY"
 
+# STOPSHIP: better pretexts
 _NEW_TESTIMONIAL_MESSAGE_PRETEXT = "New testimonial received"
+_PROMOTED_TESTIMONIAL_MESSAGE_PRETEXT = "Favorite testimonial"
 
 
 class Testimonial(object):
@@ -38,14 +43,14 @@ class Testimonial(object):
                 self.urlsafe_key)
 
 
-def _send_as_bot(msg, attachments):
+def _send_as_bot(channel, msg, attachments):
     """STOPSHIP"""
-    alertlib.Alert(msg).send_to_slack(_TESTIMONIALS_CHANNEL,
+    alertlib.Alert(msg).send_to_slack(channel,
             sender=_TESTIMONIALS_SENDER, icon_emoji=_TESTIMONIALS_EMOJI,
             attachments=attachments)
 
 
-def _testimonial_slack_attachments(testimonial):
+def _create_testimonial_slack_attachments(testimonial):
     """STOPSHIP"""
     author_text = testimonial.author_name
     if testimonial.author_email:
@@ -57,7 +62,7 @@ def _testimonial_slack_attachments(testimonial):
         relative_date = "just now"
 
     return [{
-        "fallback": ("New testimonial received from %s: \"%s\"" %
+        "fallback": ("Testimonial from %s: \"%s\"" %
             (testimonial.author_name, testimonial.body)),
         "pretext": _NEW_TESTIMONIAL_MESSAGE_PRETEXT,
         "title": ("From '%s' %s..." %
@@ -81,16 +86,35 @@ def _testimonial_slack_attachments(testimonial):
     }]
 
 
-def _send_slack_notification(testimonial):
+def _send_new_testimonial_notification(testimonial):
     """STOPSHIP"""
-    msg = "New testimonial received"
-    attachments = _testimonial_slack_attachments(testimonial)
-    _send_as_bot(msg, attachments)
+    msg = _NEW_TESTIMONIAL_MESSAGE_PRETEXT,
+    attachments = _create_testimonial_slack_attachments(testimonial)
+    _send_as_bot(_TESTIMONIALS_CHANNEL, msg, attachments)
 
 
-def _get_message_from_timestamp(channel, ts):
+def _send_promoted_message(testimonial_message):
     """STOPSHIP"""
+    msg = _PROMOTED_TESTIMONIAL_MESSAGE_PRETEXT
+    # STOPSHIP: document
+    modified_attachments = copy.deepcopy(testimonial_message["attachments"])
+    modified_attachments[0]["fields"] = []
+    modified_attachments[0]["pretext"] = _PROMOTED_TESTIMONIAL_MESSAGE_PRETEXT
+    _send_as_bot(_MAIN_KA_CHANNEL, msg, modified_attachments)
+
+
+def _get_message_from_reaction(reaction_message):
+    """STOPSHIP"""
+    try:
+        channel = reaction_message["item"]["channel"]
+        ts = reaction_message["item"]["ts"]
+    except KeyError:
+        logging.error("KeyError when trying to grab channel and ts from %s" %
+                reaction_message)
+        return None
+
     # STOPSHIP: caching
+
     client = slackclient.SlackClient(
             secrets.slack_testimonials_turtle_api_token)
 
@@ -142,28 +166,34 @@ def is_new_testimonial_announcement(slack_message):
                 _NEW_TESTIMONIAL_MESSAGE_PRETEXT))
 
 
-def is_reaction_to_testimonial(slack_message):
+def is_reaction_to_testimonial(reaction_message):
     """STOPSHIP"""
-    if not slack_message:
+    if not reaction_message:
         return False
 
-    if not "reaction" in slack_message:
+    if not "reaction" in reaction_message:
         return False
 
-    if slack_message["user"] == _TESTIMONIALS_SLACK_BOT_USER_ID:
+    if reaction_message["type"] != "reaction_added":
+        return False
+
+    if reaction_message["user"] == _TESTIMONIALS_SLACK_BOT_USER_ID:
         # We ignore the automatic reaction buttons posted by testimonials bot
         return False
 
-    reacted_to_message = _get_message_from_timestamp(
-            slack_message["item"]["channel"], slack_message["item"]["ts"])
+    reacted_to_message = _get_message_from_reaction(reaction_message)
 
     # STOPSHIP: make this work for both 'new' and 'promoted' announcements
     return is_new_testimonial_announcement(reacted_to_message)
 
 
-def respond_to_reaction(slack_message):
+def respond_to_reaction(reaction_message):
     """STOPSHIP"""
-    pass
+    reacted_to_message = _get_message_from_reaction(reaction_message)
+
+    if reaction_message["reaction"] == "+1":
+        # STOPSHIP: don't promote if already promoted
+        _send_promoted_message(reacted_to_message)
 
 
 def send_test_msg():
@@ -181,4 +211,4 @@ def send_test_msg():
             "to polynomials. Now I have more confidence in my math skills and "
             "a great GMAT score. Thank you so much!",
             "Sarah")
-    _send_slack_notification(test_testimonial)
+    _send_new_testimonial_notification(test_testimonial)
