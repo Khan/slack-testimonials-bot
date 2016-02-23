@@ -1,11 +1,19 @@
 """STOPSHIP:docstring"""
 import datetime
+import logging
 
 import alertlib
+import slackclient
+
+import secrets
 
 _TESTIMONIALS_CHANNEL = "#testimonials-test"
+# Channel ID grabbed from https://api.slack.com/methods/channels.list/test
+_TESTIMONIALS_CHANNEL_ID = "C0NFLU9UG"
 _TESTIMONIALS_SENDER = "Testimonials Turtle"
 _TESTIMONIALS_EMOJI = ":turtle:"
+
+_NEW_TESTIMONIAL_MESSAGE_PRETEXT = "New testimonial received"
 
 
 class Testimonial(object):
@@ -32,7 +40,7 @@ def _testimonial_slack_attachments(testimonial):
     return [{
         "fallback": ("New testimonial received from %s: \"%s\"" %
             (testimonial.author_name, testimonial.body)),
-        "pretext": "New testimonial received",
+        "pretext": _NEW_TESTIMONIAL_MESSAGE_PRETEXT,
         "title": "Testimonial 1234",
         "title_link": "http://khanacademy.org",
         "text": "\"%s\"" % testimonial.body,
@@ -57,6 +65,32 @@ def _send_slack_notification(testimonial):
     msg = "New testimonial received"
     attachments = _testimonial_slack_attachments(testimonial)
     _send_as_bot(msg, attachments)
+
+
+def add_emoji_reaction_buttons(slack_message):
+    """STOPSHIP"""
+    client = slackclient.SlackClient(
+            secrets.slack_testimonials_turtle_api_token)
+
+    # STOPSHIP(kamens): doc
+    response_thumbs_up = client.api_call("reactions.add", name="thumbsup",
+            channel=_TESTIMONIALS_CHANNEL_ID, timestamp=slack_message["ts"])
+    response_thumbs_down = client.api_call("reactions.add", name="thumbsdown",
+            channel=_TESTIMONIALS_CHANNEL_ID, timestamp=slack_message["ts"])
+
+    logging.info("Responses from reactions.add: (%s) and (%s)" % (
+        response_thumbs_up, response_thumbs_down))
+
+
+def is_new_testimonial_announcement(slack_message):
+    """STOPSHIP"""
+    return (
+            slack_message["type"] == "message" and
+            "username" in slack_message and
+            slack_message["username"] == _TESTIMONIALS_SENDER and
+            len(slack_message["attachments"]) == 1 and
+            (slack_message["attachments"][0]["pretext"] ==
+                _NEW_TESTIMONIAL_MESSAGE_PRETEXT))
 
 
 def send_test_msg():
