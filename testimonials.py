@@ -3,6 +3,7 @@ import datetime
 import logging
 
 import alertlib
+import humanize
 import slackclient
 
 import secrets
@@ -19,13 +20,20 @@ _NEW_TESTIMONIAL_MESSAGE_PRETEXT = "New testimonial received"
 class Testimonial(object):
     """STOPSHIP"""
     
-    def __init__(self, date, body, author_name, author_email=None):
+    def __init__(self, urlsafe_key, date, body, author_name,
+            author_email=None):
         """STOPSHIP"""
+        self.urlsafe_key = urlsafe_key
         self.date = date
         self.body = body
         self.author_name = author_name
         self.author_email = author_email
         # STOPSHIP: add sender_name and perhaps more like 'share_allowed'
+
+    @property
+    def url(self):
+        return ("https://www.khanacademy.org/devadmin/stories/%s" %
+                self.urlsafe_key)
 
 
 def _send_as_bot(msg, attachments):
@@ -37,12 +45,21 @@ def _send_as_bot(msg, attachments):
 
 def _testimonial_slack_attachments(testimonial):
     """STOPSHIP"""
+    author_text = testimonial.author_name
+    if testimonial.author_email:
+        author_text = ("<mailto:%s|%s>" %
+                (testimonial.author_email, testimonial.author_name))
+
+    relative_date = humanize.naturaltime(testimonial.date)
+    if relative_date == "now":
+        relative_date = "just now"
+
     return [{
         "fallback": ("New testimonial received from %s: \"%s\"" %
             (testimonial.author_name, testimonial.body)),
         "pretext": _NEW_TESTIMONIAL_MESSAGE_PRETEXT,
-        "title": "Testimonial 1234",
-        "title_link": "http://khanacademy.org",
+        "title": ("From '%s' %s..." %
+            (author_text, relative_date)),
         "text": "\"%s\"" % testimonial.body,
         "color": "#46a8bf",
         "fields": [
@@ -54,7 +71,8 @@ def _testimonial_slack_attachments(testimonial):
             },
             {
                 "title": "Or share with our users...",
-                "value": "...by [publishing on our /stories page].",
+                "value": ("...by <%s|publishing on our stories page>" %
+                    testimonial.url),
                 "short": True
             }
         ]
@@ -96,7 +114,9 @@ def is_new_testimonial_announcement(slack_message):
 
 def send_test_msg():
     """STOPSHIP: remove or make unit test"""
-    test_testimonial = Testimonial(datetime.datetime.now(),
+    test_testimonial = Testimonial(
+            "fakeurlkey",
+            datetime.datetime.now(),
             "I just scored in the 97th percentile on the GMAT (740/800) and "
             "I owe a HUGE thanks to the Khan Academy. I've never liked math or"
             " had any confidence in my abilities, but I don't come from an "

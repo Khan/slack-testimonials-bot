@@ -14,3 +14,4 @@ skip_files:
  - ^Makefile$
  - ^alertlib-src/.*$
  - ^python-slackclient-src/.*$
+ - ^humanize-src/.*$
