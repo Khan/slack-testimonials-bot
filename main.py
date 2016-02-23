@@ -1,14 +1,17 @@
 """STOPSHIP:docstring"""
-import webapp2
+import flask
 
 import testimonials
 
 
-class TestSend(webapp2.RequestHandler):
-    def get(self):
-        testimonials.send_test_msg()
+app = flask.Flask(__name__)
 
 
-app = webapp2.WSGIApplication([
-    ('/testsend', TestSend),
-])
+@app.route('/testsend')
+def test_send():
+    testimonials.send_test_msg()
+    return 'OK'
+
+
+if __name__ == '__main__':
+    app.run(host='127.0.0.1', port=8080)
