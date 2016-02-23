@@ -47,13 +47,14 @@ def _testimonial_slack_attachments(testimonial):
         "color": "#46a8bf",
         "fields": [
             {
-                "title": "Vote up or down",
-                "value": "...to share in main room",
+                "title": "Vote via :thumbsup: or :thumbsdown: below...",
+                "value": "...to share this in #khan-academy or hide it,"
+                         " respectively.",
                 "short": True
             },
             {
-                "title": "Publish to /stories",
-                "value": "[by clicking here]",
+                "title": "Or share with our users...",
+                "value": "...by [publishing on our /stories page].",
                 "short": True
             }
         ]
@@ -96,14 +97,14 @@ def is_new_testimonial_announcement(slack_message):
 def send_test_msg():
     """STOPSHIP: remove or make unit test"""
     test_testimonial = Testimonial(datetime.datetime.now(),
-            """I just scored in the 97th percentile on the GMAT (740/800) and I
-            owe a HUGE thanks to the Khan Academy. I've never liked math or had
-            any confidence in my abilities, but I don't come from an affluent
-            family (no money for my education) and I didn't want to spend a lot
-            of money on test prep. I ended up spending NOTHING because the GMAT
-            problem videos and the structured math reviews were so
-            comprehensive. I started at 1+1=2 and worked my way up to
-            polynomials. Now I have more confidence in my math skills and a
-            great GMAT score. Thank you so much!""",
+            "I just scored in the 97th percentile on the GMAT (740/800) and "
+            "I owe a HUGE thanks to the Khan Academy. I've never liked math or"
+            " had any confidence in my abilities, but I don't come from an "
+            "affluent family (no money for my education) and I didn't want to "
+            "spend a lot of money on test prep. I ended up spending NOTHING "
+            "because the GMAT problem videos and the structured math reviews "
+            "were so comprehensive. I started at 1+1=2 and worked my way up "
+            "to polynomials. Now I have more confidence in my math skills and "
+            "a great GMAT score. Thank you so much!",
             "Sarah")
     _send_slack_notification(test_testimonial)
