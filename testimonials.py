@@ -1,5 +1,6 @@
 """STOPSHIP:docstring"""
 import datetime
+import json
 import logging
 
 import alertlib
@@ -13,6 +14,7 @@ _TESTIMONIALS_CHANNEL = "#testimonials-test"
 _TESTIMONIALS_CHANNEL_ID = "C0NFLU9UG"
 _TESTIMONIALS_SENDER = "Testimonials Turtle"
 _TESTIMONIALS_EMOJI = ":turtle:"
+_TESTIMONIALS_SLACK_BOT_USER_ID = "U0NJ3M8KY"
 
 _NEW_TESTIMONIAL_MESSAGE_PRETEXT = "New testimonial received"
 
@@ -86,6 +88,33 @@ def _send_slack_notification(testimonial):
     _send_as_bot(msg, attachments)
 
 
+def _get_message_from_timestamp(channel, ts):
+    """STOPSHIP"""
+    # STOPSHIP: caching
+    client = slackclient.SlackClient(
+            secrets.slack_testimonials_turtle_api_token)
+
+    response_json = client.api_call("channels.history", channel=channel,
+            latest=ts, oldest=ts, inclusive=1, count=1)
+
+    try:
+        response = json.loads(response_json)
+    except:
+        logging.error("Failed parsing response when searching for message %s "
+                "in channel %s. Response: %s" % (ts, channel, response_json))
+
+    if (not response or 
+            response["ok"] != True or
+            len(response["messages"]) != 1):
+        logging.error(
+                "Unable to find message %s in channel %s. Response: '%s'" %
+                (ts, channel, response))
+        return None
+
+    # Found message in channel!
+    return response["messages"][0]
+
+
 def add_emoji_reaction_buttons(slack_message):
     """STOPSHIP"""
     client = slackclient.SlackClient(
@@ -104,12 +133,37 @@ def add_emoji_reaction_buttons(slack_message):
 def is_new_testimonial_announcement(slack_message):
     """STOPSHIP"""
     return (
+            slack_message and
             slack_message["type"] == "message" and
             "username" in slack_message and
             slack_message["username"] == _TESTIMONIALS_SENDER and
             len(slack_message["attachments"]) == 1 and
             (slack_message["attachments"][0]["pretext"] ==
                 _NEW_TESTIMONIAL_MESSAGE_PRETEXT))
+
+
+def is_reaction_to_testimonial(slack_message):
+    """STOPSHIP"""
+    if not slack_message:
+        return False
+
+    if not "reaction" in slack_message:
+        return False
+
+    if slack_message["user"] == _TESTIMONIALS_SLACK_BOT_USER_ID:
+        # We ignore the automatic reaction buttons posted by testimonials bot
+        return False
+
+    reacted_to_message = _get_message_from_timestamp(
+            slack_message["item"]["channel"], slack_message["item"]["ts"])
+
+    # STOPSHIP: make this work for both 'new' and 'promoted' announcements
+    return is_new_testimonial_announcement(reacted_to_message)
+
+
+def respond_to_reaction(slack_message):
+    """STOPSHIP"""
+    pass
 
 
 def send_test_msg():
