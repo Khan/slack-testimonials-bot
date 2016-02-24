@@ -23,7 +23,7 @@ _TESTIMONIALS_SLACK_BOT_USER_ID = "U0NJ3M8KY"
 
 # STOPSHIP: better pretexts
 _NEW_TESTIMONIAL_MESSAGE_PRETEXT = "New testimonial..."
-_PROMOTED_TESTIMONIAL_MESSAGE_PRETEXT = "Favorite testimonial"
+_PROMOTED_TESTIMONIAL_MESSAGE_PRETEXT = "A favorited testimonial..."
 
 
 class Testimonial(object):
@@ -132,6 +132,22 @@ def _create_testimonial_slack_attachments(channel, msg, testimonial):
                 "value": (":warning: We don't have permission to share outside"
                           " KA."),
                 "short": True
+            })
+
+    elif channel == _MAIN_KA_CHANNEL:
+        if testimonial.share_allowed:
+            fields.append({
+                "title": "You're free to share this one!",
+                "value": (":newspaper: On twitter, facebook, wherevs - we have"
+                          " permission to post this story publicly!"),
+                "short": False
+            })
+        else:
+            fields.append({
+                "title": "Remember to keep this one internal!",
+                "value": (":warning: We weren't given permission to share this"
+                          " person's story outside of KA."),
+                "short": False
             })
 
     return [{

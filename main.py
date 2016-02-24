@@ -8,9 +8,7 @@ import testimonials
 app = flask.Flask(__name__)
 
 
-# TODO(kamens): separate below hacky tests into unit tests
-@app.route('/test_new_testimonial')
-def test_new_testimonial():
+def _get_fake_testimonial():
     """STOPSHIP"""
     testimonial = testimonials.Testimonial.fake_instance()
 
@@ -18,15 +16,21 @@ def test_new_testimonial():
     # share-allowed and -disabled formatting
     testimonial.share_allowed = request.args.get("share_allowed", None) == '1'
 
-    testimonials.notify_testimonials_channel(testimonial)
+    return testimonial
+
+
+# TODO(kamens): separate below hacky tests into unit tests
+@app.route('/test_new_testimonial')
+def test_new_testimonial():
+    """STOPSHIP"""
+    testimonials.notify_testimonials_channel(_get_fake_testimonial())
     return 'OK'
 
 
 @app.route('/test_promote_testimonial')
 def test_promote_testimonial():
     """STOPSHIP"""
-    testimonial = testimonials.Testimonial.fake_instance()
-    testimonials.promote_to_main_channel(testimonial)
+    testimonials.promote_to_main_channel(_get_fake_testimonial())
     return 'OK'
 
 
