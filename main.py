@@ -13,6 +13,11 @@ app = flask.Flask(__name__)
 def test_new_testimonial():
     """STOPSHIP"""
     testimonial = testimonials.Testimonial.fake_instance()
+
+    # Allow overriding the share_allowed bit for testing display of
+    # share-allowed and -disabled formatting
+    testimonial.share_allowed = request.args.get("share_allowed", None) == '1'
+
     testimonials.notify_testimonials_channel(testimonial)
     return 'OK'
 

@@ -22,14 +22,14 @@ _TESTIMONIALS_EMOJI = ":turtle:"
 _TESTIMONIALS_SLACK_BOT_USER_ID = "U0NJ3M8KY"
 
 # STOPSHIP: better pretexts
-_NEW_TESTIMONIAL_MESSAGE_PRETEXT = "New testimonial received"
+_NEW_TESTIMONIAL_MESSAGE_PRETEXT = "New testimonial..."
 _PROMOTED_TESTIMONIAL_MESSAGE_PRETEXT = "Favorite testimonial"
 
 
 class Testimonial(object):
     """STOPSHIP"""
 
-    def __init__(self, urlsafe_key, date, body, author_name,
+    def __init__(self, urlsafe_key, date, body, share_allowed, author_name,
             author_email=None):
         """STOPSHIP"""
         self.urlsafe_key = urlsafe_key
@@ -37,7 +37,7 @@ class Testimonial(object):
         self.body = body
         self.author_name = author_name
         self.author_email = author_email
-        # STOPSHIP: add sender_name and perhaps more like 'share_allowed'
+        self.share_allowed = share_allowed
 
     @property
     def url(self):
@@ -52,6 +52,7 @@ class Testimonial(object):
             request.form['key'],
             datetime.datetime.fromtimestamp(int(request.form['date'])),
             request.form['body'],
+            request.form['share_allowed'] == '1',
             request.form['author_name'],
             request.form['author_email']
         )
@@ -69,7 +70,8 @@ class Testimonial(object):
             "because the GMAT problem videos and the structured math reviews "
             "were so comprehensive. I started at 1+1=2 and worked my way up "
             "to polynomials. Now I have more confidence in my math skills and "
-            "a great GMAT score. Thank you so much!",
+            "a great GMAT score.\n\n\nThank you so much!",
+            False,
             "Sarah")
 
 
@@ -110,27 +112,33 @@ def _create_testimonial_slack_attachments(channel, msg, testimonial):
         relative_date = "just now"
 
     fields = []
-    if channel == _NEW_TESTIMONIAL_MESSAGE_PRETEXT:
-        fields = [
-                {
-                    "title": "Vote via :thumbsup: or :thumbsdown: below...",
-                    "value": "...to share this in #khan-academy or hide it,"
-                    " respectively.",
+    if channel == _TESTIMONIALS_CHANNEL:
+        fields.append({
+            "title": "Share w/ the team internally...",
+            "value": "Voting your :thumbsup: will send this to #khan-academy.",
                     "short": True
-                },
-                {
-                    "title": "Or share with our users...",
-                    "value": ("...by <%s|publishing on our stories page>" %
-                        testimonial.url),
-                    "short": True
-                },
-            ]
+        })
+
+        if testimonial.share_allowed:
+            fields.append({
+                "title": "...or share w/ our users.",
+                "value": ("By <%s|publishing on our stories page>." %
+                    testimonial.url),
+                "short": True
+            })
+        else:
+            fields.append({
+                "title": "...but remember to keep this one internal!",
+                "value": (":warning: We don't have permission to share outside"
+                          " KA."),
+                "short": True
+            })
 
     return [{
         "fallback": ("Testimonial from %s: \"%s\"" %
             (testimonial.author_name, testimonial.body)),
         "pretext": msg,
-        "title": ("From '%s' %s..." %
+        "title": ("...from '%s' %s:" %
             (author_text, relative_date)),
         "title_link": testimonial.url,
         "text": "\"%s\"" % testimonial.body,
@@ -208,11 +216,10 @@ def add_emoji_reaction_buttons(slack_message):
     # STOPSHIP(kamens): doc
     response_thumbs_up = _slack_api_call("reactions.add", name="thumbsup",
             channel=_TESTIMONIALS_CHANNEL_ID, timestamp=slack_message["ts"])
-    response_thumbs_down = _slack_api_call("reactions.add", name="thumbsdown",
-            channel=_TESTIMONIALS_CHANNEL_ID, timestamp=slack_message["ts"])
 
-    logging.info("Responses from reactions.add: (%s) and (%s)" % (
-        response_thumbs_up, response_thumbs_down))
+    # TODO(kamens): add back the automatically-added downvote button when we
+    # make use of it
+    logging.info("Response from reactions.add: %s" % response_thumbs_up)
 
 
 def is_new_testimonial_announcement(slack_message):
