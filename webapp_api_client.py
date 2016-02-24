@@ -9,7 +9,7 @@ _WEBAPP_URL = "http://localhost:8080"
 def _webapp_api_post(relative_url, **kwargs):
     """STOPSHIP"""
     url = _WEBAPP_URL + relative_url
-    return requests.post(url, data=kwargs)
+    return requests.post(url, json=kwargs)
 
 
 def send_vote_totals(urlsafe_key, upvotes):
