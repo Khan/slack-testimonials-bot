@@ -1,4 +1,6 @@
 """Tool for talking to KA's main webapp API."""
+import logging
+
 import requests
 
 
@@ -14,7 +16,13 @@ def _webapp_api_post(relative_url, **kwargs):
         **kwargs: dictionary of POST data to be sent
     """
     url = _WEBAPP_URL + relative_url
-    return requests.post(url, json=kwargs)
+    try:
+        return requests.post(url, json=kwargs)
+    except Exception, e:
+        # Gently fail if we ever fail to talk to the KA API: record the error,
+        # return None, and let the listener live on.
+        logging.error("Failed to send post to KA webapp API: %s" % e)
+        return None
 
 
 def send_vote_totals(urlsafe_key, upvotes):
