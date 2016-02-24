@@ -1,5 +1,4 @@
 """STOPSHIP:docstring"""
-import copy
 import datetime
 import json
 import logging
@@ -50,6 +49,24 @@ def _send_as_bot(channel, msg, attachments):
             attachments=attachments)
 
 
+def _slack_api_call(method, **kwargs):
+    """STOPSHIP"""
+    client = slackclient.SlackClient(
+            secrets.slack_testimonials_turtle_api_token)
+
+    response_json = client.api_call(method, **kwargs)
+
+    try:
+        response = json.loads(response_json)
+    except:
+        # STOPSHIP: doc about being forgiving
+        logging.error("Failed parsing response for %s API call. Response: %s" %
+                (method, response_json))
+        return None
+
+    return response
+
+
 def _create_testimonial_slack_attachments(testimonial):
     """STOPSHIP"""
     author_text = testimonial.author_name
@@ -93,16 +110,6 @@ def _send_new_testimonial_notification(testimonial):
     _send_as_bot(_TESTIMONIALS_CHANNEL, msg, attachments)
 
 
-def _send_promoted_message(testimonial_message):
-    """STOPSHIP"""
-    msg = _PROMOTED_TESTIMONIAL_MESSAGE_PRETEXT
-    # STOPSHIP: document
-    modified_attachments = copy.deepcopy(testimonial_message["attachments"])
-    modified_attachments[0]["fields"] = []
-    modified_attachments[0]["pretext"] = _PROMOTED_TESTIMONIAL_MESSAGE_PRETEXT
-    _send_as_bot(_MAIN_KA_CHANNEL, msg, modified_attachments)
-
-
 def _get_message_from_reaction(reaction_message):
     """STOPSHIP"""
     try:
@@ -115,17 +122,8 @@ def _get_message_from_reaction(reaction_message):
 
     # STOPSHIP: caching
 
-    client = slackclient.SlackClient(
-            secrets.slack_testimonials_turtle_api_token)
-
-    response_json = client.api_call("channels.history", channel=channel,
+    response = _slack_api_call("channels.history", channel=channel,
             latest=ts, oldest=ts, inclusive=1, count=1)
-
-    try:
-        response = json.loads(response_json)
-    except:
-        logging.error("Failed parsing response when searching for message %s "
-                "in channel %s. Response: %s" % (ts, channel, response_json))
 
     if (not response or 
             response["ok"] != True or
@@ -141,13 +139,10 @@ def _get_message_from_reaction(reaction_message):
 
 def add_emoji_reaction_buttons(slack_message):
     """STOPSHIP"""
-    client = slackclient.SlackClient(
-            secrets.slack_testimonials_turtle_api_token)
-
     # STOPSHIP(kamens): doc
-    response_thumbs_up = client.api_call("reactions.add", name="thumbsup",
+    response_thumbs_up = _slack_api_call("reactions.add", name="thumbsup",
             channel=_TESTIMONIALS_CHANNEL_ID, timestamp=slack_message["ts"])
-    response_thumbs_down = client.api_call("reactions.add", name="thumbsdown",
+    response_thumbs_down = _slack_api_call("reactions.add", name="thumbsdown",
             channel=_TESTIMONIALS_CHANNEL_ID, timestamp=slack_message["ts"])
 
     logging.info("Responses from reactions.add: (%s) and (%s)" % (
@@ -189,11 +184,11 @@ def is_reaction_to_testimonial(reaction_message):
 
 def respond_to_reaction(reaction_message):
     """STOPSHIP"""
-    reacted_to_message = _get_message_from_reaction(reaction_message)
-
-    if reaction_message["reaction"] == "+1":
-        # STOPSHIP: don't promote if already promoted
-        _send_promoted_message(reacted_to_message)
+    # STOPSHIP: send reaction totals to webapp server
+    # if reaction_message["reaction"] != "-1":
+    #   reacted_to_message = _get_message_from_reaction(reaction_message)
+    #   send totals from reacted_to_message
+    pass
 
 
 def send_test_msg():
