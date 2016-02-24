@@ -204,8 +204,17 @@ def _count_upvotes_on_message(slack_message):
     reactions = slack_message["reactions"]
     for reaction in reactions:
         # Count everything except for downvotes as upvotes
-        if reaction["name"] != "-1":
-            total += reaction["count"]
+        if reaction["name"] == "-1":
+            continue
+
+        count = reaction["count"]
+
+        if _TESTIMONIALS_SLACK_BOT_USER_ID in reaction["users"]:
+            # Don't count automatic reactions from the testimonials bot
+            count -= 1
+
+        total += count
+
     return total
 
 
