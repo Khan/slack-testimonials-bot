@@ -1,4 +1,4 @@
-"""STOPSHIP:docstring"""
+"""Tool for sending testimonials to slack and responding to slack reactions."""
 import datetime
 import json
 import logging
@@ -21,17 +21,15 @@ _TESTIMONIALS_SENDER = "Testimonials Turtle"
 _TESTIMONIALS_EMOJI = ":turtle:"
 _TESTIMONIALS_SLACK_BOT_USER_ID = "U0NJ3M8KY"
 
-# STOPSHIP: better pretexts
 _NEW_TESTIMONIAL_MESSAGE_PRETEXT = "New testimonial..."
 _PROMOTED_TESTIMONIAL_MESSAGE_PRETEXT = "A favorited testimonial..."
 
 
 class Testimonial(object):
-    """STOPSHIP"""
+    """Represents a single user's testimonial."""
 
     def __init__(self, urlsafe_key, date, body, share_allowed, author_name,
             author_email=None):
-        """STOPSHIP"""
         self.urlsafe_key = urlsafe_key
         self.date = date
         self.body = body
@@ -41,13 +39,13 @@ class Testimonial(object):
 
     @property
     def url(self):
-        """STOPSHIP"""
+        """URL for editing and publishing this testimonial on /stories."""
         return ("https://www.khanacademy.org/devadmin/stories?key=%s" %
                 self.urlsafe_key)
 
     @staticmethod
     def parse_from_request(request):
-        """STOPSHIP"""
+        """Parse and return a new Testimonial from incoming request data."""
         return Testimonial(
             request.form['key'],
             datetime.datetime.fromtimestamp(int(request.form['date'])),
@@ -59,6 +57,7 @@ class Testimonial(object):
 
     @staticmethod
     def fake_instance():
+        """Return a fake testimonial for use in testing."""
         return Testimonial(
             "fakeurlkey",
             datetime.datetime.now(),
@@ -76,14 +75,21 @@ class Testimonial(object):
 
 
 def _send_as_bot(channel, msg, attachments):
-    """STOPSHIP"""
+    """Send a slack message on behalf of the testimonials bot.
+    
+    Arguments:
+        channel: slack channel
+        msg: text of main slack message (ignored by slack if attachemnts exist)
+        attachments: slack message attachments, which are used for richly-
+            formatted messages (see https://api.slack.com/docs/attachments)
+    """
     alertlib.Alert(msg).send_to_slack(channel,
             sender=_TESTIMONIALS_SENDER, icon_emoji=_TESTIMONIALS_EMOJI,
             attachments=attachments)
 
 
 def _slack_api_call(method, **kwargs):
-    """STOPSHIP"""
+    """Make a slack API call, passing in all kwargs as request data."""
     client = slackclient.SlackClient(
             secrets.slack_testimonials_turtle_api_token)
 
@@ -92,7 +98,8 @@ def _slack_api_call(method, **kwargs):
     try:
         response = json.loads(response_json)
     except:
-        # STOPSHIP: doc about being forgiving
+        # We're forgiving in the case of a slack API failure. We log the
+        # failure and return None but don't crash the request.
         logging.error("Failed parsing response for %s API call. Response: %s" %
                 (method, response_json))
         return None
@@ -101,18 +108,22 @@ def _slack_api_call(method, **kwargs):
 
 
 def _create_testimonial_slack_attachments(channel, msg, testimonial):
-    """STOPSHIP"""
-    author_text = testimonial.author_name
-    if testimonial.author_email:
-        author_text = ("<mailto:%s|%s>" %
-                (testimonial.author_email, testimonial.author_name))
+    """Generate slack attachment data for a richly-formatted announcement.
 
+    Our attachments include calls to action like "[publish this testimonial]"
+    or "upvote this to send it to the main #khan-academy room."
+    
+    See https://api.slack.com/docs/attachments for more info on formatting
+    slack messages with attachments.
+    """
     relative_date = humanize.naturaltime(testimonial.date)
     if relative_date == "now":
         relative_date = "just now"
 
     fields = []
     if channel == _TESTIMONIALS_CHANNEL:
+        # If posting in #testimonials, invite people to upvote to share w/ the
+        # main #khan-academy channel or, if allowed, to publish on /stories
         fields.append({
             "title": "Share w/ the team internally...",
             "value": "Voting your :thumbsup: will send this to #khan-academy.",
@@ -135,6 +146,8 @@ def _create_testimonial_slack_attachments(channel, msg, testimonial):
             })
 
     elif channel == _MAIN_KA_CHANNEL:
+        # If posting in main #khan-academy channel, remind people about whether
+        # or not they can share the testimonial
         if testimonial.share_allowed:
             fields.append({
                 "title": "You're free to share this one!",
@@ -155,7 +168,7 @@ def _create_testimonial_slack_attachments(channel, msg, testimonial):
             (testimonial.author_name, testimonial.body)),
         "pretext": msg,
         "title": ("...from '%s' %s:" %
-            (author_text, relative_date)),
+            (testimonial.author_name, relative_date)),
         "title_link": testimonial.url,
         "text": "\"%s\"" % testimonial.body,
         "color": "#46a8bf",
@@ -164,7 +177,14 @@ def _create_testimonial_slack_attachments(channel, msg, testimonial):
 
 
 def _send_testimonial_notification(channel, testimonial):
-    """STOPSHIP"""
+    """Send notification about a testimonial to one of our target channels.
+
+    If being sent to #testimonials, we're making an announcement about a brand
+    new testimonial.
+
+    If being sent to #khan-academy, we're making an announcement about a top/
+    favorite testimonial.
+    """
     if channel == _TESTIMONIALS_CHANNEL:
         msg = _NEW_TESTIMONIAL_MESSAGE_PRETEXT
     elif channel == _MAIN_KA_CHANNEL:
@@ -176,7 +196,10 @@ def _send_testimonial_notification(channel, testimonial):
 
 
 def _count_upvotes_on_message(slack_message):
-    """STOPSHIP"""
+    """Return total number of upvotes on slack message.
+    
+    All non-downvote emoji reactions are counted as upvotes.
+    """
     total = 0
     reactions = slack_message["reactions"]
     for reaction in reactions:
@@ -187,7 +210,12 @@ def _count_upvotes_on_message(slack_message):
 
 
 def _parse_urlsafe_key_from_message(slack_message):
-    """STOPSHIP"""
+    """Parse a testimonial's urlsafe_key from testimonal announcement message.
+    
+    We use this embedded urlsafe_key in every announcement message as a unique
+    testimonial identifier that travels w/ each slack message about the
+    testimonial.
+    """
     if (not "attachments" in slack_message or
             len(slack_message["attachments"]) == 0):
         return None
@@ -201,7 +229,7 @@ def _parse_urlsafe_key_from_message(slack_message):
 
 
 def _get_message_from_reaction(reaction_message):
-    """STOPSHIP"""
+    """Given a slack reaction message, return message it's reacting to."""
     try:
         channel = reaction_message["item"]["channel"]
         ts = reaction_message["item"]["ts"]
@@ -228,8 +256,11 @@ def _get_message_from_reaction(reaction_message):
 
 
 def add_emoji_reaction_buttons(slack_message):
-    """STOPSHIP"""
-    # STOPSHIP(kamens): doc
+    """Add reaction 'buttons' to a slack message by having bot auto-'react'.
+    
+    The bot's reaction emojis will show up as buttons under the message for
+    others to click.
+    """
     response_thumbs_up = _slack_api_call("reactions.add", name="thumbsup",
             channel=_TESTIMONIALS_CHANNEL_ID, timestamp=slack_message["ts"])
 
@@ -239,7 +270,11 @@ def add_emoji_reaction_buttons(slack_message):
 
 
 def is_new_testimonial_announcement(slack_message):
-    """STOPSHIP"""
+    """Return true if a slack msg looks like a new testimonial announcement.
+    
+    Used to identify when emoji reactions are reactions to our own testimonial
+    announcements.
+    """
     return (
             slack_message and
             slack_message["type"] == "message" and
@@ -251,7 +286,7 @@ def is_new_testimonial_announcement(slack_message):
 
 
 def is_reaction_to_testimonial(reaction_message):
-    """STOPSHIP"""
+    """Return true if slack message is a reaction to a testimonial announce."""
     if not reaction_message:
         return False
 
@@ -269,7 +304,11 @@ def is_reaction_to_testimonial(reaction_message):
 
 
 def send_updated_reaction_totals(reaction_message):
-    """STOPSHIP"""
+    """Send total emoji vote counts to KA's webapp for recording.
+    
+    KA's webapp keeps track of how many emoji reaction votes have been cast on
+    each testimonial announcement.
+    """
     if reaction_message["reaction"] != "-1":
         reacted_to_message = _get_message_from_reaction(reaction_message)
 
