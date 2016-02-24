@@ -24,10 +24,17 @@ import testimonials
 def handle_messages(messages):
     """Handle a list of slack msgs, responding to testimonial-related ones."""
     for message in messages:
+        # If we see a new testimonial announcement, automatically add some
+        # emoji reaction buttons.
         if testimonials.is_new_testimonial_announcement(message):
             testimonials.add_emoji_reaction_buttons(message)
-        elif testimonials.is_reaction_to_testimonial(message):
-            testimonials.send_updated_reaction_totals(message)
+
+        # If we see a reaction to a testimonial announcement, respond to it.
+        reacted_to_message = (
+                testimonials.maybe_get_reacted_to_testimonial_message(message))
+        if reacted_to_message:
+            testimonials.send_updated_reaction_totals(message,
+                    reacted_to_message)
 
 
 def listen():

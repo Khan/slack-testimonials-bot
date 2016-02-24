@@ -247,8 +247,6 @@ def _get_message_from_reaction(reaction_message):
                 reaction_message)
         return None
 
-    # STOPSHIP: caching
-
     response = _slack_api_call("channels.history", channel=channel,
             latest=ts, oldest=ts, inclusive=1, count=1)
 
@@ -294,33 +292,41 @@ def is_new_testimonial_announcement(slack_message):
                 _NEW_TESTIMONIAL_MESSAGE_PRETEXT))
 
 
-def is_reaction_to_testimonial(reaction_message):
-    """Return true if slack message is a reaction to a testimonial announce."""
-    if not reaction_message:
-        return False
+def maybe_get_reacted_to_testimonial_message(possible_reaction_message):
+    """Return reacted-to slack message if incoming message is a reaction.
 
-    if not "reaction" in reaction_message:
-        return False
+    Only returns the reacted-to slack message if the reaction appears to be on
+    a testimonial announcement.
 
-    if reaction_message["user"] == _TESTIMONIALS_SLACK_BOT_USER_ID:
+    If the incoming slack message isn't a reaction message or isn't reacting to
+    a testimonial announcement, return None.
+    """
+    if not possible_reaction_message:
+        return None
+
+    if not "reaction" in possible_reaction_message:
+        return None
+
+    if possible_reaction_message["user"] == _TESTIMONIALS_SLACK_BOT_USER_ID:
         # We ignore the automatic reaction buttons posted by testimonials bot
-        return False
+        return None
 
-    reacted_to_message = _get_message_from_reaction(reaction_message)
+    reacted_to_message = _get_message_from_reaction(possible_reaction_message)
 
     # STOPSHIP: make this work for both 'new' and 'promoted' announcements
-    return is_new_testimonial_announcement(reacted_to_message)
+    if not is_new_testimonial_announcement(reacted_to_message):
+        return None
+
+    return reacted_to_message
 
 
-def send_updated_reaction_totals(reaction_message):
+def send_updated_reaction_totals(reaction_message, reacted_to_message):
     """Send total emoji vote counts to KA's webapp for recording.
     
     KA's webapp keeps track of how many emoji reaction votes have been cast on
     each testimonial announcement.
     """
     if reaction_message["reaction"] != "-1":
-        reacted_to_message = _get_message_from_reaction(reaction_message)
-
         upvotes = _count_upvotes_on_message(reacted_to_message)
         urlsafe_key = _parse_urlsafe_key_from_message(reacted_to_message)
 
