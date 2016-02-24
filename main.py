@@ -1,5 +1,4 @@
 """STOPSHIP:docstring"""
-import datetime
 import flask
 from flask import request
 
@@ -9,21 +8,36 @@ import testimonials
 app = flask.Flask(__name__)
 
 
-@app.route('/testsend')
-def test_send():
-    testimonials.send_test_msg()
+# TODO(kamens): separate below hacky tests into unit tests
+@app.route('/test_new_testimonial')
+def test_new_testimonial():
+    """STOPSHIP"""
+    testimonial = testimonials.Testimonial.fake_instance()
+    testimonials.notify_testimonials_channel(testimonial)
     return 'OK'
 
 
-@app.route('/notify', methods=['POST'])
-def notify():
-    key = request.form['key']
-    date = datetime.datetime.fromtimestamp(int(request.form['date']))
-    body = request.form['body']
-    author_name = request.form['author_name']
-    author_email = request.form['author_email']
+@app.route('/test_promote_testimonial')
+def test_promote_testimonial():
+    """STOPSHIP"""
+    testimonial = testimonials.Testimonial.fake_instance()
+    testimonials.promote_to_main_channel(testimonial)
+    return 'OK'
 
-    testimonials.send_msg(key, date, body, author_name, author_email)
+
+@app.route('/api/new_testimonial', methods=['POST'])
+def new_testimonial():
+    """STOPSHIP"""
+    testimonial = testimonials.Testimonial.parse_from_request(request)
+    testimonials.notify_testimonials_channel(testimonial)
+    return 'OK'
+
+
+@app.route('/api/promote_testimonial', methods=['POST'])
+def promote_testimonial():
+    """STOPSHIP"""
+    testimonial = testimonials.Testimonial.parse_from_request(request)
+    testimonials.promote_to_main_channel(testimonial)
     return 'OK'
 
 

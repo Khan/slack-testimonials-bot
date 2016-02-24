@@ -16,6 +16,7 @@ _MAIN_KA_CHANNEL = "#secret-khan-academy"
 _TESTIMONIALS_CHANNEL = "#testimonials-test"
 # Channel ID grabbed from https://api.slack.com/methods/channels.list/test
 _TESTIMONIALS_CHANNEL_ID = "C0NFLU9UG"
+
 _TESTIMONIALS_SENDER = "Testimonials Turtle"
 _TESTIMONIALS_EMOJI = ":turtle:"
 _TESTIMONIALS_SLACK_BOT_USER_ID = "U0NJ3M8KY"
@@ -40,8 +41,36 @@ class Testimonial(object):
 
     @property
     def url(self):
+        """STOPSHIP"""
         return ("https://www.khanacademy.org/devadmin/stories?key=%s" %
                 self.urlsafe_key)
+
+    @staticmethod
+    def parse_from_request(request):
+        """STOPSHIP"""
+        return Testimonial(
+            request.form['key'],
+            datetime.datetime.fromtimestamp(int(request.form['date'])),
+            request.form['body'],
+            request.form['author_name'],
+            request.form['author_email']
+        )
+
+    @staticmethod
+    def fake_instance():
+        return Testimonial(
+            "fakeurlkey",
+            datetime.datetime.now(),
+            "I just scored in the 97th percentile on the GMAT (740/800) and "
+            "I owe a HUGE thanks to the Khan Academy. I've never liked math or"
+            " had any confidence in my abilities, but I don't come from an "
+            "affluent family (no money for my education) and I didn't want to "
+            "spend a lot of money on test prep. I ended up spending NOTHING "
+            "because the GMAT problem videos and the structured math reviews "
+            "were so comprehensive. I started at 1+1=2 and worked my way up "
+            "to polynomials. Now I have more confidence in my math skills and "
+            "a great GMAT score. Thank you so much!",
+            "Sarah")
 
 
 def _send_as_bot(channel, msg, attachments):
@@ -69,7 +98,7 @@ def _slack_api_call(method, **kwargs):
     return response
 
 
-def _create_testimonial_slack_attachments(testimonial):
+def _create_testimonial_slack_attachments(channel, msg, testimonial):
     """STOPSHIP"""
     author_text = testimonial.author_name
     if testimonial.author_email:
@@ -80,37 +109,46 @@ def _create_testimonial_slack_attachments(testimonial):
     if relative_date == "now":
         relative_date = "just now"
 
+    fields = []
+    if channel == _NEW_TESTIMONIAL_MESSAGE_PRETEXT:
+        fields = [
+                {
+                    "title": "Vote via :thumbsup: or :thumbsdown: below...",
+                    "value": "...to share this in #khan-academy or hide it,"
+                    " respectively.",
+                    "short": True
+                },
+                {
+                    "title": "Or share with our users...",
+                    "value": ("...by <%s|publishing on our stories page>" %
+                        testimonial.url),
+                    "short": True
+                },
+            ]
+
     return [{
         "fallback": ("Testimonial from %s: \"%s\"" %
             (testimonial.author_name, testimonial.body)),
-        "pretext": _NEW_TESTIMONIAL_MESSAGE_PRETEXT,
+        "pretext": msg,
         "title": ("From '%s' %s..." %
             (author_text, relative_date)),
         "title_link": testimonial.url,
         "text": "\"%s\"" % testimonial.body,
         "color": "#46a8bf",
-        "fields": [
-            {
-                "title": "Vote via :thumbsup: or :thumbsdown: below...",
-                "value": "...to share this in #khan-academy or hide it,"
-                         " respectively.",
-                "short": True
-            },
-            {
-                "title": "Or share with our users...",
-                "value": ("...by <%s|publishing on our stories page>" %
-                    testimonial.url),
-                "short": True
-            },
-        ]
+        "fields": fields
     }]
 
 
-def _send_new_testimonial_notification(testimonial):
+def _send_testimonial_notification(channel, testimonial):
     """STOPSHIP"""
-    msg = _NEW_TESTIMONIAL_MESSAGE_PRETEXT,
-    attachments = _create_testimonial_slack_attachments(testimonial)
-    _send_as_bot(_TESTIMONIALS_CHANNEL, msg, attachments)
+    if channel == _TESTIMONIALS_CHANNEL:
+        msg = _NEW_TESTIMONIAL_MESSAGE_PRETEXT
+    elif channel == _MAIN_KA_CHANNEL:
+        msg = _PROMOTED_TESTIMONIAL_MESSAGE_PRETEXT
+
+    attachments = _create_testimonial_slack_attachments(channel, msg,
+            testimonial)
+    _send_as_bot(channel, msg, attachments)
 
 
 def _count_upvotes_on_message(slack_message):
@@ -218,29 +256,21 @@ def send_updated_reaction_totals(reaction_message):
         webapp_api_client.send_vote_totals(urlsafe_key, upvotes)
 
 
-def send_test_msg():
-    """STOPSHIP: remove or make unit test"""
-    test_testimonial = Testimonial(
-            "fakeurlkey",
-            datetime.datetime.now(),
-            "I just scored in the 97th percentile on the GMAT (740/800) and "
-            "I owe a HUGE thanks to the Khan Academy. I've never liked math or"
-            " had any confidence in my abilities, but I don't come from an "
-            "affluent family (no money for my education) and I didn't want to "
-            "spend a lot of money on test prep. I ended up spending NOTHING "
-            "because the GMAT problem videos and the structured math reviews "
-            "were so comprehensive. I started at 1+1=2 and worked my way up "
-            "to polynomials. Now I have more confidence in my math skills and "
-            "a great GMAT score. Thank you so much!",
-            "Sarah")
-    _send_new_testimonial_notification(test_testimonial)
+def notify_testimonials_channel(testimonial):
+    """Sends slack notification alerting #testimonials about a new testimonial.
 
-
-def send_msg(key, date, body, author_name, author_email):
-    """Sends a slack notification containing a bunch of testimonial info.
-
-    Invoked from /notify, which is invoked by submitting a testimonial on
-    khanacademy.org/stories.
+    Invoked from /api/new_testimonial, which is hit upon submitting a
+    testimonial on khanacademy.org/stories or via forwarding an email to
+    testimonials_turtle@khan-academy.appspotmail.com
     """
-    testimonial = Testimonial(key, date, body, author_name, author_email)
-    _send_new_testimonial_notification(testimonial)
+    _send_testimonial_notification(_TESTIMONIALS_CHANNEL, testimonial)
+
+
+def promote_to_main_channel(testimonial):
+    """Sends an upvoted slack notification to main #khan-academy channel.
+
+    This only happens once somebody has upvoted a testimonial in the
+    #testimonials room. The main KA webapp will hit /api/promote_testimonial
+    in that case, which triggers this promote-to-main-slack-channel process.
+    """
+    _send_testimonial_notification(_MAIN_KA_CHANNEL, testimonial)
