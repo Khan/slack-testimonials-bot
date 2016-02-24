@@ -25,7 +25,7 @@ _PROMOTED_TESTIMONIAL_MESSAGE_PRETEXT = "Favorite testimonial"
 
 class Testimonial(object):
     """STOPSHIP"""
-    
+
     def __init__(self, urlsafe_key, date, body, author_name,
             author_email=None):
         """STOPSHIP"""
@@ -38,7 +38,7 @@ class Testimonial(object):
 
     @property
     def url(self):
-        return ("https://www.khanacademy.org/devadmin/stories/%s" %
+        return ("https://www.khanacademy.org/devadmin/stories?key=%s" %
                 self.urlsafe_key)
 
 
@@ -98,7 +98,7 @@ def _create_testimonial_slack_attachments(testimonial):
                 "value": ("...by <%s|publishing on our stories page>" %
                     testimonial.url),
                 "short": True
-            }
+            },
         ]
     }]
 
@@ -125,7 +125,7 @@ def _get_message_from_reaction(reaction_message):
     response = _slack_api_call("channels.history", channel=channel,
             latest=ts, oldest=ts, inclusive=1, count=1)
 
-    if (not response or 
+    if (not response or
             response["ok"] != True or
             len(response["messages"]) != 1):
         logging.error(
@@ -207,3 +207,13 @@ def send_test_msg():
             "a great GMAT score. Thank you so much!",
             "Sarah")
     _send_new_testimonial_notification(test_testimonial)
+
+
+def send_msg(key, date, body, author_name, author_email):
+    """Sends a slack notification containing a bunch of testimonial info.
+
+    Invoked from /notify, which is invoked by submitting a testimonial on
+    khanacademy.org/stories.
+    """
+    testimonial = Testimonial(key, date, body, author_name, author_email)
+    _send_new_testimonial_notification(testimonial)
