@@ -2,11 +2,13 @@
 import datetime
 import json
 import logging
+import urlparse
 
 import alertlib
 import humanize
 import slackclient
 
+import webapp_api_client
 import secrets
 
 # STOPSHIP: use debug flag of some sort to toggle b/w real and fake channels
@@ -84,6 +86,7 @@ def _create_testimonial_slack_attachments(testimonial):
         "pretext": _NEW_TESTIMONIAL_MESSAGE_PRETEXT,
         "title": ("From '%s' %s..." %
             (author_text, relative_date)),
+        "title_link": testimonial.url,
         "text": "\"%s\"" % testimonial.body,
         "color": "#46a8bf",
         "fields": [
@@ -108,6 +111,31 @@ def _send_new_testimonial_notification(testimonial):
     msg = _NEW_TESTIMONIAL_MESSAGE_PRETEXT,
     attachments = _create_testimonial_slack_attachments(testimonial)
     _send_as_bot(_TESTIMONIALS_CHANNEL, msg, attachments)
+
+
+def _count_upvotes_on_message(slack_message):
+    """STOPSHIP"""
+    total = 0
+    reactions = slack_message["reactions"]
+    for reaction in reactions:
+        # Count everything except for downvotes as upvotes
+        if reaction["name"] != "-1":
+            total += reaction["count"]
+    return total
+
+
+def _parse_urlsafe_key_from_message(slack_message):
+    """STOPSHIP"""
+    if (not "attachments" in slack_message or
+            len(slack_message["attachments"]) == 0):
+        return None
+
+    title_link = slack_message["attachments"][0].get("title_link", None)
+    parsed_url = urlparse.urlparse(title_link)
+    query_dict = urlparse.parse_qs(parsed_url.query)
+    vals = query_dict.get("key", [None])
+
+    return vals[0]
 
 
 def _get_message_from_reaction(reaction_message):
@@ -169,9 +197,6 @@ def is_reaction_to_testimonial(reaction_message):
     if not "reaction" in reaction_message:
         return False
 
-    if reaction_message["type"] != "reaction_added":
-        return False
-
     if reaction_message["user"] == _TESTIMONIALS_SLACK_BOT_USER_ID:
         # We ignore the automatic reaction buttons posted by testimonials bot
         return False
@@ -182,13 +207,15 @@ def is_reaction_to_testimonial(reaction_message):
     return is_new_testimonial_announcement(reacted_to_message)
 
 
-def respond_to_reaction(reaction_message):
+def send_updated_reaction_totals(reaction_message):
     """STOPSHIP"""
-    # STOPSHIP: send reaction totals to webapp server
-    # if reaction_message["reaction"] != "-1":
-    #   reacted_to_message = _get_message_from_reaction(reaction_message)
-    #   send totals from reacted_to_message
-    pass
+    if reaction_message["reaction"] != "-1":
+        reacted_to_message = _get_message_from_reaction(reaction_message)
+
+        upvotes = _count_upvotes_on_message(reacted_to_message)
+        urlsafe_key = _parse_urlsafe_key_from_message(reacted_to_message)
+
+        webapp_api_client.send_vote_totals(urlsafe_key, upvotes)
 
 
 def send_test_msg():

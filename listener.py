@@ -17,7 +17,7 @@ def handle_messages(messages):
             testimonials.add_emoji_reaction_buttons(message)
         elif testimonials.is_reaction_to_testimonial(message):
             logging.critical("Found reaction to testimonial: %s" % message)
-            testimonials.respond_to_reaction(message)
+            testimonials.send_updated_reaction_totals(message)
         else:
             logging.critical("Ignoring: %s" % message)
 
