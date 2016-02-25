@@ -2,6 +2,7 @@
 import datetime
 import json
 import logging
+import re
 import urlparse
 
 import alertlib
@@ -76,7 +77,7 @@ class Testimonial(object):
 
 def _send_as_bot(channel, msg, attachments):
     """Send a slack message on behalf of the testimonials bot.
-    
+
     Arguments:
         channel: slack channel
         msg: text of main slack message (ignored by slack if attachemnts exist)
@@ -88,11 +89,10 @@ def _send_as_bot(channel, msg, attachments):
             attachments=attachments)
 
 
-def _slack_api_call(method, **kwargs):
+def _slack_api_call(
+        method, token=secrets.slack_testimonials_turtle_api_token, **kwargs):
     """Make a slack API call, passing in all kwargs as request data."""
-    client = slackclient.SlackClient(
-            secrets.slack_testimonials_turtle_api_token)
-
+    client = slackclient.SlackClient(token)
     response_json = client.api_call(method, **kwargs)
 
     try:
@@ -107,12 +107,93 @@ def _slack_api_call(method, **kwargs):
     return response
 
 
+def _sanitize_search_results(match):
+    """Cleans up search results.
+
+    - Removes the pretext "New testimonial..."
+    - Removes the fields at the bottom for voting/publishing
+    - Fixes up the learner's name
+    """
+    if not 'attachments' in match or len(match['attachments']) == 0:
+        return None
+
+    testimonial = match['attachments'][0]
+    testimonial['pretext'] = None
+    testimonial['fields'] = []
+
+    name = None
+    name_match = re.match("\.\.\.from '(\\w*)'", testimonial.get('title', ''))
+    if name_match:
+        name = name_match.group(1)
+
+    testimonial['title'] = name or "Anonymous"
+
+    return testimonial
+
+
+# Paramters, subject to change
+QUERY_SIZE = 20
+MAX_TO_SHOW = 5
+
+
+def _query_for_channel_name_and_phrases(channel_name, phrases):
+    """Send a Slack Search API call for a given channel and list of phrases"""
+    query = 'in:"%s" and %s' % (channel_name, ' and '.join(phrases))
+
+    resp = _slack_api_call(
+        'search.messages',
+        token=secrets.slack_testimonials_search_api_token,
+        query=query,
+        count=QUERY_SIZE)
+
+    return filter(None,
+        map(_sanitize_search_results, resp['messages']['matches']))
+
+
+def post_search_results(channel_id, search_phrase, requester):
+    """Respond to a requester's search phrase in a given channel"""
+    testimonials = _query_for_channel_name_and_phrases(
+            'secret-khan-academy',
+            ['"A favorited testimonial..."', search_phrase])
+
+    room_left = MAX_TO_SHOW - len(testimonials)
+
+    if (room_left > 0):
+        backup_testimonials = _query_for_channel_name_and_phrases(
+                'testimonials-test',
+                ['"New testimonial..."', search_phrase])
+
+        # Build a set of title_link's, which can be used to check uniqueness
+        # of the testimonials
+
+        # YIKES
+        title_link_set = set(filter(None, map(lambda t: t.get('title_link', None), testimonials)))
+
+        for testimonial in backup_testimonials[:room_left]:
+            if testimonial.get('title_link', '') not in title_link_set:
+                testimonials.append(testimonial)
+    else:
+        testimonials = testimonials[:MAX_TO_SHOW]
+
+    # Modify the first testimonials pretext
+    if len(testimonials) > 0:
+        testimonials[0]['pretext'] = (
+            'Hey @%s, I found %d results for "%s"' % (
+                requester, len(testimonials), search_phrase))
+        _send_as_bot(channel_id, "", testimonials)
+    else:
+        msg = (
+            'Hey @%s, no results found for "%s"' % (
+                requester, search_phrase))
+        _send_as_bot(channel_id, "", [{ 'pretext': msg }])
+
+
 def _create_testimonial_slack_attachments(channel, msg, testimonial):
     """Generate slack attachment data for a richly-formatted announcement.
 
     Our attachments include calls to action like "[publish this testimonial]"
     or "upvote this to send it to the main #khan-academy room."
-    
+
     See https://api.slack.com/docs/attachments for more info on formatting
     slack messages with attachments.
     """
@@ -197,7 +278,7 @@ def _send_testimonial_notification(channel, testimonial):
 
 def _count_upvotes_on_message(slack_message):
     """Return total number of upvotes on slack message.
-    
+
     All non-downvote emoji reactions are counted as upvotes.
     """
     total = 0
@@ -220,7 +301,7 @@ def _count_upvotes_on_message(slack_message):
 
 def _parse_urlsafe_key_from_message(slack_message):
     """Parse a testimonial's urlsafe_key from testimonal announcement message.
-    
+
     We use this embedded urlsafe_key in every announcement message as a unique
     testimonial identifier that travels w/ each slack message about the
     testimonial.
@@ -264,7 +345,7 @@ def _get_message_from_reaction(reaction_message):
 
 def add_emoji_reaction_buttons(slack_message):
     """Add reaction 'buttons' to a slack message by having bot auto-'react'.
-    
+
     The bot's reaction emojis will show up as buttons under the message for
     others to click.
     """
@@ -334,7 +415,7 @@ def maybe_get_reacted_to_testimonial_message(possible_reaction_message):
 
 def send_updated_reaction_totals(reaction_message, reacted_to_message):
     """Send total emoji vote counts to KA's webapp for recording.
-    
+
     KA's webapp keeps track of how many emoji reaction votes have been cast on
     each testimonial announcement.
     """

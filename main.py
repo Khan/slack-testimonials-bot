@@ -43,7 +43,7 @@ def test_promote_testimonial():
 @app.route('/api/new_testimonial', methods=['POST'])
 def new_testimonial():
     """Send notification about a newly created testimonial.
-    
+
     This webhook is hit by the main KA webapp whenever a new testimonial is
     received.
     """
@@ -55,13 +55,25 @@ def new_testimonial():
 @app.route('/api/promote_testimonial', methods=['POST'])
 def promote_testimonial():
     """Send a 'promoted' testimonial notification (to KA's main slack channel).
-    
+
     This webhook is hit by the main KA webapp when it notices that a
     testimonial has received a certain number of upvotes in the #testimonials
     channel.
     """
     testimonial = testimonials.Testimonial.parse_from_request(request)
     testimonials.promote_to_main_channel(testimonial)
+    return 'OK'
+
+
+@app.route('/api/testimonial_search', methods=['POST'])
+def test_fetch_testimonial():
+    """Test sending promoted notification about a favorite fake testimonial."""
+    channel_id = request.form['channel_id']
+    search_phrase = request.form['text']
+    requester = request.form['user_name']
+
+    testimonials.post_search_results(channel_id, search_phrase, requester)
+
     return 'OK'
 
 
