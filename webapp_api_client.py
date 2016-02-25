@@ -3,9 +3,14 @@ import logging
 
 import requests
 
+import bot_globals
 
-# STOPSHIP: distinguish b/w local and prod servers via app's debug flag
-_WEBAPP_URL = "http://localhost:8080"
+
+if bot_globals.is_dev_server:
+    _WEBAPP_URL = "http://localhost:8080"
+else:
+    _WEBAPP_URL = (
+            "https://znd-160225-jdan-3d-game-dot-khan-academy.appspot.com/")
 
 
 def _webapp_api_post(relative_url, **kwargs):

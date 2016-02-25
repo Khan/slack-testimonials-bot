@@ -75,8 +75,3 @@ def test_fetch_testimonial():
     testimonials.post_search_results(channel_id, search_phrase, requester)
 
     return 'OK'
-
-
-if __name__ == '__main__':
-    # STOPSHIP: turn off debug in prod
-    app.run(host='127.0.0.1', port=8081, debug=True)

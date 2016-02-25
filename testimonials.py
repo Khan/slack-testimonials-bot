@@ -9,12 +9,17 @@ import alertlib
 import humanize
 import slackclient
 
+import bot_globals
 import webapp_api_client
 import secrets
 
-# STOPSHIP: use debug flag of some sort to toggle b/w real and fake channels
-_MAIN_KA_CHANNEL = "secret-khan-academy"
-_TESTIMONIALS_CHANNEL = "testimonials-test"
+if bot_globals.is_dev_server:
+    _MAIN_KA_CHANNEL = "secret-khan-academy"
+    _TESTIMONIALS_CHANNEL = "testimonials-test"
+else:
+    _MAIN_KA_CHANNEL = "secret-khan-academy"
+    _TESTIMONIALS_CHANNEL = "testimonials"
+
 # Channel ID grabbed from https://api.slack.com/methods/channels.list/test
 _TESTIMONIALS_CHANNEL_ID = "C0NFLU9UG"
 
@@ -184,7 +189,7 @@ def post_search_results(channel_id, search_phrase, requester):
         msg = (
             'Hey @%s, no results found for "%s"' % (
                 requester, search_phrase))
-        return _send_as_bot(channel_id, "", [{ 'pretext': msg }])
+        return _send_as_bot(channel_id, "", [{'pretext': msg}])
 
 
 def _create_testimonial_slack_attachments(channel, msg, testimonial):
