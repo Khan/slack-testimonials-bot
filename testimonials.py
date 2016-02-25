@@ -33,7 +33,7 @@ class Testimonial(object):
         self.urlsafe_key = urlsafe_key
         self.date = date
         self.body = body
-        self.author_name = author_name
+        self.author_name = author_name or "Anonymous"
         self.author_email = author_email
         self.share_allowed = share_allowed
 
