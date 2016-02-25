@@ -13,8 +13,8 @@ import webapp_api_client
 import secrets
 
 # STOPSHIP: use debug flag of some sort to toggle b/w real and fake channels
-_MAIN_KA_CHANNEL = "#secret-khan-academy"
-_TESTIMONIALS_CHANNEL = "#testimonials-test"
+_MAIN_KA_CHANNEL = "secret-khan-academy"
+_TESTIMONIALS_CHANNEL = "testimonials-test"
 # Channel ID grabbed from https://api.slack.com/methods/channels.list/test
 _TESTIMONIALS_CHANNEL_ID = "C0NFLU9UG"
 
@@ -154,20 +154,19 @@ def post_search_results(channel_id, search_phrase, requester):
     """Respond to a requester's search phrase in a given channel"""
     testimonials = _query_for_channel_name_and_phrases(
             'secret-khan-academy',
-            ['"A favorited testimonial..."', search_phrase])
+            ['"%s"' % _PROMOTED_TESTIMONIAL_MESSAGE_PRETEXT, search_phrase])
 
     room_left = MAX_TO_SHOW - len(testimonials)
 
     if (room_left > 0):
         backup_testimonials = _query_for_channel_name_and_phrases(
                 'testimonials-test',
-                ['"New testimonial..."', search_phrase])
+                ['"%s"' % _NEW_TESTIMONIAL_MESSAGE_PRETEXT, search_phrase])
 
         # Build a set of title_link's, which can be used to check uniqueness
         # of the testimonials
-
-        # YIKES
-        title_link_set = set(filter(None, map(lambda t: t.get('title_link', None), testimonials)))
+        title_links = map(lambda t: t.get('title_link', None), testimonials)
+        title_link_set = set(filter(None, title_links))
 
         for testimonial in backup_testimonials[:room_left]:
             if testimonial.get('title_link', '') not in title_link_set:
@@ -180,12 +179,12 @@ def post_search_results(channel_id, search_phrase, requester):
         testimonials[0]['pretext'] = (
             'Hey @%s, I found %d results for "%s"' % (
                 requester, len(testimonials), search_phrase))
-        _send_as_bot(channel_id, "", testimonials)
+        return _send_as_bot(channel_id, "", testimonials)
     else:
         msg = (
             'Hey @%s, no results found for "%s"' % (
                 requester, search_phrase))
-        _send_as_bot(channel_id, "", [{ 'pretext': msg }])
+        return _send_as_bot(channel_id, "", [{ 'pretext': msg }])
 
 
 def _create_testimonial_slack_attachments(channel, msg, testimonial):
@@ -273,7 +272,7 @@ def _send_testimonial_notification(channel, testimonial):
 
     attachments = _create_testimonial_slack_attachments(channel, msg,
             testimonial)
-    _send_as_bot(channel, msg, attachments)
+    _send_as_bot("#" + channel, msg, attachments)
 
 
 def _count_upvotes_on_message(slack_message):
