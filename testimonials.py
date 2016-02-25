@@ -52,8 +52,8 @@ class Testimonial(object):
             datetime.datetime.fromtimestamp(int(request.form['date'])),
             request.form['body'],
             request.form['share_allowed'] == '1',
-            request.form['author_name'],
-            request.form['author_email']
+            request.form.get('author_name', None),  # Author fields optional
+            request.form.get('author_email', None)
         )
 
     @staticmethod
