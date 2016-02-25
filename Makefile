@@ -3,7 +3,7 @@ deploy:
 	appcfg.py update -A khan-testimonials-turtle .
 
 serve:
-	dev_appserver.py .
+	dev_appserver.py --port=8081 .
 
 test:
 	python -m unittest testimonials_test
