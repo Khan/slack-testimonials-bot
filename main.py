@@ -8,6 +8,8 @@ channels where all employees hang out and will be inspired ;).
 import flask
 from flask import request
 
+import flask_exceptions
+import secrets
 import testimonials
 
 
@@ -65,12 +67,16 @@ def promote_testimonial():
     return 'OK'
 
 
-@app.route('/api/testimonial_search', methods=['POST'])
+@app.route('/api/testimonial_search', methods=['GET'])
 def test_fetch_testimonial():
     """Test sending promoted notification about a favorite fake testimonial."""
     channel_id = request.form['channel_id']
     search_phrase = request.form['text']
     requester = request.form['user_name']
+    token = request.form['token']
+
+    if token != secrets.slack_testimonials_slash_command_token:
+        raise flask_exceptions.InvalidUsage("Mismatched slack token")
 
     testimonials.post_search_results(channel_id, search_phrase, requester)
 
