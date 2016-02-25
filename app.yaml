@@ -1,9 +1,16 @@
-runtime: python
-vm: true
-entrypoint: gunicorn -b :$PORT main:app
+application: khan-testimonial-turtle
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: false
 
-manual_scaling:
-  instances: 1
+handlers:
+ - url: /.*
+   script: main.app
+
+libraries:
+ - name: ssl
+   version: latest
 
 skip_files:
  - ^(.*/)?#.*#$
