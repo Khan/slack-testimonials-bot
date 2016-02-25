@@ -276,11 +276,10 @@ def add_emoji_reaction_buttons(slack_message):
     logging.info("Response from reactions.add: %s" % response_thumbs_up)
 
 
-def is_new_testimonial_announcement(slack_message):
-    """Return true if a slack msg looks like a new testimonial announcement.
-    
-    Used to identify when emoji reactions are reactions to our own testimonial
-    announcements.
+def _is_specific_testimonial_announcement(slack_message, pretext):
+    """Return true if slack msg is a specific testimonial announcement.
+
+    The specific announement type is identified by the message's pretext.
     """
     return (
             slack_message and
@@ -288,12 +287,23 @@ def is_new_testimonial_announcement(slack_message):
             "username" in slack_message and
             slack_message["username"] == _TESTIMONIALS_SENDER and
             len(slack_message["attachments"]) == 1 and
-            (slack_message["attachments"][0]["pretext"] ==
-                _NEW_TESTIMONIAL_MESSAGE_PRETEXT))
+            (slack_message["attachments"][0]["pretext"] == pretext))
+
+
+def is_new_testimonial_announcement(slack_message):
+    """Return true if slack msg is a new testimonial announcement."""
+    return _is_specific_testimonial_announcement(slack_message,
+            _NEW_TESTIMONIAL_MESSAGE_PRETEXT)
+
+
+def is_promoted_testimonial_announcement(slack_message):
+    """Return true if slack msg is a promoted testimonial announcement."""
+    return _is_specific_testimonial_announcement(slack_message,
+            _PROMOTED_TESTIMONIAL_MESSAGE_PRETEXT)
 
 
 def maybe_get_reacted_to_testimonial_message(possible_reaction_message):
-    """Return reacted-to slack message if incoming message is a reaction.
+    """Return reacted-to slack msg if passed-in msg is a testimonial reaction.
 
     Only returns the reacted-to slack message if the reaction appears to be on
     a testimonial announcement.
@@ -311,10 +321,12 @@ def maybe_get_reacted_to_testimonial_message(possible_reaction_message):
         # We ignore the automatic reaction buttons posted by testimonials bot
         return None
 
+    # Get the slack message that this 'reaction message' is a reaction to.
     reacted_to_message = _get_message_from_reaction(possible_reaction_message)
 
-    # STOPSHIP: make this work for both 'new' and 'promoted' announcements
-    if not is_new_testimonial_announcement(reacted_to_message):
+    # Make sure it looks like a testimonial announcement of ours
+    if not (is_new_testimonial_announcement(reacted_to_message) or
+            is_promoted_testimonial_announcement(reacted_to_message)):
         return None
 
     return reacted_to_message
@@ -330,7 +342,10 @@ def send_updated_reaction_totals(reaction_message, reacted_to_message):
         upvotes = _count_upvotes_on_message(reacted_to_message)
         urlsafe_key = _parse_urlsafe_key_from_message(reacted_to_message)
 
-        webapp_api_client.send_vote_totals(urlsafe_key, upvotes)
+        # We treat the message's timestamp as a unique identifier for KA webapp
+        message_id = reacted_to_message["ts"]
+
+        webapp_api_client.send_vote_totals(urlsafe_key, upvotes, message_id)
 
 
 def notify_testimonials_channel(testimonial):

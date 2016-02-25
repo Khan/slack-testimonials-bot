@@ -25,12 +25,17 @@ def _webapp_api_post(relative_url, **kwargs):
         return None
 
 
-def send_vote_totals(urlsafe_key, upvotes):
+def send_vote_totals(urlsafe_key, upvotes, message_id):
     """Send KA API call to update vote totals on a specific testimonial.
+
+    This sends the vote totals coming from a specific slack message. We include
+    the message id so the server can properly sum up vote totals if they are
+    received from multiple slack messages that refer to the same testimonial.
     
     Arguments:
         urlsafe_key: testimonial's urlsafe_key (from KA's API)
         upvotes: total # of upvotes on testimonial
+        message_id: unique-enough identifier of slack message (timestamp)
     """
     _webapp_api_post("/api/internal/stories/update_votes",
-            urlsafe_key=urlsafe_key, upvotes=upvotes)
+            urlsafe_key=urlsafe_key, upvotes=upvotes, message_id=message_id)
