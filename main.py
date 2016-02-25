@@ -67,7 +67,7 @@ def promote_testimonial():
     return 'OK'
 
 
-@app.route('/api/testimonial_search', methods=['GET'])
+@app.route('/api/testimonial_search', methods=['POST'])
 def test_fetch_testimonial():
     """Test sending promoted notification about a favorite fake testimonial."""
     channel_id = request.form['channel_id']
