@@ -20,7 +20,7 @@ if bot_globals.is_dev_server:
     _TESTIMONIALS_CHANNEL = "testimonials-test"
     _TESTIMONIALS_CHANNEL_ID = "C0NFLU9UG"
 else:
-    _MAIN_KA_CHANNEL = "secret-khan-academy"
+    _MAIN_KA_CHANNEL = "prod-khan-academy"
     _TESTIMONIALS_CHANNEL = "testimonials"
     _TESTIMONIALS_CHANNEL_ID = "C0P49HG5V"
 
