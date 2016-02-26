@@ -13,15 +13,16 @@ import bot_globals
 import webapp_api_client
 import secrets
 
+# Channel IDs manually grabbed from
+#   https://api.slack.com/methods/channels.list/test
 if bot_globals.is_dev_server:
     _MAIN_KA_CHANNEL = "secret-khan-academy"
     _TESTIMONIALS_CHANNEL = "testimonials-test"
+    _TESTIMONIALS_CHANNEL_ID = "C0NFLU9UG"
 else:
     _MAIN_KA_CHANNEL = "secret-khan-academy"
     _TESTIMONIALS_CHANNEL = "testimonials"
-
-# Channel ID grabbed from https://api.slack.com/methods/channels.list/test
-_TESTIMONIALS_CHANNEL_ID = "C0NFLU9UG"
+    _TESTIMONIALS_CHANNEL_ID = "C0P49HG5V"
 
 _TESTIMONIALS_SENDER = "Testimonials Turtle"
 _TESTIMONIALS_EMOJI = ":turtle:"
@@ -158,14 +159,14 @@ def _query_for_channel_name_and_phrases(channel_name, phrases):
 def post_search_results(channel_id, search_phrase, requester):
     """Respond to a requester's search phrase in a given channel"""
     testimonials = _query_for_channel_name_and_phrases(
-            'secret-khan-academy',
+            _MAIN_KA_CHANNEL,
             ['"%s"' % _PROMOTED_TESTIMONIAL_MESSAGE_PRETEXT, search_phrase])
 
     room_left = MAX_TO_SHOW - len(testimonials)
 
     if (room_left > 0):
         backup_testimonials = _query_for_channel_name_and_phrases(
-                'testimonials-test',
+                _TESTIMONIALS_CHANNEL,
                 ['"%s"' % _NEW_TESTIMONIAL_MESSAGE_PRETEXT, search_phrase])
 
         # Build a set of title_link's, which can be used to check uniqueness
