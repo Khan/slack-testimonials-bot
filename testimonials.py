@@ -144,7 +144,10 @@ MAX_TO_SHOW = 5
 
 def _query_for_channel_name_and_phrases(channel_name, phrases):
     """Send a Slack Search API call for a given channel and list of phrases"""
-    query = 'in:"%s" and %s' % (channel_name, ' and '.join(phrases))
+    query = 'in:"%s" and from:"%s" and %s' % (
+            channel_name,
+            _TESTIMONIALS_SENDER.lower(),
+            ' and '.join(phrases))
 
     resp = _slack_api_call(
         'search.messages',
