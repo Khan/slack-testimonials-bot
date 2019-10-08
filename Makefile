@@ -1,12 +1,17 @@
+# TODO(sean): the appcfg.py line should probably be changed to something like
+# `gcloud app deploy --project khan-testimonials-turtle`
 deploy:
-	[ -f "secrets.py" ] || ( echo "Please create a secrets.py file with:\n\thipchat_alertlib_token\n\thostedgraphite_api_key\n\tslack_alertlib_webhook_url\nfrom webapp's secrets.py." ; exit 1 )
+	[ -f "secrets.py" ] || ( echo "Please create a secrets.py file by running 'make decrypt_secrets'." ; exit 1 )
 	appcfg.py update -A khan-testimonials-turtle .
 
 serve:
-	dev_appserver.py --port=8081 .
+	dev_appserver.py --admin_port=9000 --port=9081 .
 
 test:
 	python -m unittest testimonials_test
+
+deps:
+	pip install -t lib -r requirements.txt
 
 # to create secrets.py
 secrets.py secrets_decrypt decrypt_secrets:
@@ -16,7 +21,7 @@ secrets.py secrets_decrypt decrypt_secrets:
 		echo "secrets.py has been successfully created! You're done."; \
 	else \
 		echo "Get the password from here:"; \
-		echo "https://phabricator.khanacademy.org/K133"; \
+		echo "https://keepersecurity.com/vault/#detail/yv9Co30As1grN9mIUIRvpA"; \
 		openssl cast5-cbc -md md5 -d -in secrets.py.cast5 -out secrets.py; \
 	fi
 	@chmod 600 secrets.py
