@@ -46,7 +46,7 @@ def _webapp_graphql_mutation(mutation, variables):
             along to the graphql endpoint.
     """
     # We send all requests directly to the graphql-gateway
-    url = _WEBAPP_URL + "/graphql"
+    url = _WEBAPP_URL + "/graphql/updateVotes"
     data = json.dumps({
         'query': mutation,
         'variables': variables,
