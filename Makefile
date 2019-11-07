@@ -1,8 +1,6 @@
-# TODO(sean): the appcfg.py line should probably be changed to something like
-# `gcloud app deploy --project khan-testimonials-turtle`
 deploy:
 	[ -f "secrets.py" ] || ( echo "Please create a secrets.py file by running 'make decrypt_secrets'." ; exit 1 )
-	appcfg.py update -A khan-testimonials-turtle .
+	gcloud app deploy app.yaml --project khan-testimonials-turtle --version 1 --promote
 
 serve:
 	dev_appserver.py --admin_port=9000 --port=9081 .
