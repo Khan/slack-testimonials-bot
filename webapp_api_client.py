@@ -36,7 +36,7 @@ UPDATE_VOTES_MUTATION = """
 """
 
 
-def _webapp_graphql_mutation(mutation, variables):
+def _webapp_graphql_mutation(mutation, variables, operation_name):
     """Send a graphql mutation request to KA
 
     Arguments:
@@ -44,9 +44,11 @@ def _webapp_graphql_mutation(mutation, variables):
             example: '{ doFoo(bar: $baz) {success} }'
         variables: a dictionary of variables included in the mutation to pass
             along to the graphql endpoint.
+        operation_name: a string identifying the mutation, for example:
+            `updateVotes`
     """
     # We send all requests directly to the graphql-gateway
-    url = _WEBAPP_URL + "/graphql/updateVotes"
+    url = _WEBAPP_URL + "/graphql/" + operation_name
     data = json.dumps({
         'query': mutation,
         'variables': variables,
@@ -80,4 +82,4 @@ def send_vote_totals(urlsafe_key, upvotes, message_id):
         "secretKey": secrets.user_story_upvoting_secret
     }
 
-    _webapp_graphql_mutation(UPDATE_VOTES_MUTATION, variables)
+    _webapp_graphql_mutation(UPDATE_VOTES_MUTATION, variables, "updateVotes")
