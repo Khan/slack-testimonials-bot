@@ -57,8 +57,7 @@ def _webapp_graphql_mutation(mutation, variables, operation_name):
         operation_name: a string identifying the mutation, for example:
             `updateVotes`
     """
-    # We send all requests directly to the graphql-gateway
-    url = _WEBAPP_URL + "/graphql/" + operation_name
+    url = _WEBAPP_URL + "/api/internal/graphql/" + operation_name
     data = json.dumps({
         'query': mutation,
         'variables': variables,
