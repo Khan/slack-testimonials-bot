@@ -215,7 +215,7 @@ def _create_testimonial_slack_attachments(channel, msg, testimonial):
         # main #khan-academy channel or, if allowed, to publish on /stories
         fields.append({
             "title": "Share w/ the team internally...",
-            "value": "Voting your :thumbsup: will send this to #khan-academy.",
+            "value": "Voting only :thumbsup: will send this to #khan-academy.",
                     "short": True
         })
 
@@ -287,13 +287,13 @@ def _send_testimonial_notification(channel, testimonial):
 def _count_upvotes_on_message(slack_message):
     """Return total number of upvotes on slack message.
 
-    All non-downvote emoji reactions are counted as upvotes.
+    Only +1 reactions are counted.
     """
     total = 0
     reactions = slack_message["reactions"]
     for reaction in reactions:
         # Count everything except for downvotes as upvotes
-        if reaction["name"] == "-1":
+        if reaction["name"] != "+1":
             continue
 
         count = reaction["count"]
@@ -427,7 +427,7 @@ def send_updated_reaction_totals(reaction_message, reacted_to_message):
     KA's webapp keeps track of how many emoji reaction votes have been cast on
     each testimonial announcement.
     """
-    if reaction_message["reaction"] != "-1":
+    if reaction_message["reaction"] == "+1":
         upvotes = _count_upvotes_on_message(reacted_to_message)
         urlsafe_key = _parse_urlsafe_key_from_message(reacted_to_message)
 
