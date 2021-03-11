@@ -336,8 +336,8 @@ def _get_message_from_reaction(reaction_message):
                 reaction_message)
         return None
 
-    response = _slack_api_call("channels.history", channel=channel,
-            latest=ts, oldest=ts, inclusive=1, count=1)
+    response = _slack_api_call("conversations.history", channel=channel,
+            latest=ts, oldest=ts, inclusive=1, limit=1)
 
     if (not response or
             response["ok"] != True or
