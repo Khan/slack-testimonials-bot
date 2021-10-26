@@ -292,7 +292,7 @@ def _count_upvotes_on_message(slack_message):
     total = 0
     reactions = slack_message["reactions"]
     for reaction in reactions:
-        # Count everything except for downvotes as upvotes, ignoring skin-tone
+        # Count +1 reactions as upvotes, ignoring skin-tone
         if reaction["name"].split("::")[0] != "+1":
             continue
 
@@ -427,7 +427,7 @@ def send_updated_reaction_totals(reaction_message, reacted_to_message):
     KA's webapp keeps track of how many emoji reaction votes have been cast on
     each testimonial announcement.
     """
-    if reaction_message["reaction"] == "+1":
+    if reaction_message["reaction"].split("::")[0] == "+1":
         upvotes = _count_upvotes_on_message(reacted_to_message)
         urlsafe_key = _parse_urlsafe_key_from_message(reacted_to_message)
 
