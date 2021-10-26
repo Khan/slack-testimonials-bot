@@ -292,8 +292,8 @@ def _count_upvotes_on_message(slack_message):
     total = 0
     reactions = slack_message["reactions"]
     for reaction in reactions:
-        # Count everything except for downvotes as upvotes
-        if reaction["name"] != "+1":
+        # Count everything except for downvotes as upvotes, ignoring skin-tone
+        if reaction["name"].split("::")[0] != "+1":
             continue
 
         count = reaction["count"]
