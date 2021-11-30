@@ -239,7 +239,7 @@ def _create_testimonial_slack_attachments(channel, msg, testimonial):
         # or not they can share the testimonial
         if testimonial.share_allowed:
             fields.append({
-                "title": "You're free to share this one!",
+                "title": "Check with Comms team first:",
                 "value": (":newspaper: On twitter, facebook, wherevs - we have"
                           " permission to post this story publicly!"),
                 "short": False
@@ -276,8 +276,10 @@ def _send_testimonial_notification(channel, testimonial):
     """
     if channel == _TESTIMONIALS_CHANNEL:
         msg = _NEW_TESTIMONIAL_MESSAGE_PRETEXT
-    elif channel == _MAIN_KA_CHANNEL:
+    elif channel == _MAIN_KA_CHANNEL and testimonial.share_allowed:
         msg = _PROMOTED_TESTIMONIAL_MESSAGE_PRETEXT
+    else: 
+        return
 
     attachments = _create_testimonial_slack_attachments(channel, msg,
             testimonial)
