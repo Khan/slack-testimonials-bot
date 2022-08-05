@@ -137,7 +137,7 @@ def _sanitize_search_results(match):
     return testimonial
 
 
-# Paramters, subject to change
+# Parameters, subject to change
 QUERY_SIZE = 20
 MAX_TO_SHOW = 5
 
@@ -444,6 +444,15 @@ def notify_testimonials_channel(testimonial):
     testimonial on khanacademy.org/stories or via forwarding an email to
     testimonials_turtle@khan-academy.appspotmail.com
     """
+
+    # NOTE(drosile) as of August 2022, a user or users with these author names
+    # are submitting what look like machine learning generated testimonials
+    # that are very lengthy and spam the slack channel. we assume they'll give
+    # up eventually, but in the meantime, we can at least not spam ourselves.
+    author = testimonial.author_name.lower()
+    if author is 'derek ward' or author is 'kingstarz phoenix':
+        return
+
     _send_testimonial_notification(_TESTIMONIALS_CHANNEL, testimonial)
 
 
