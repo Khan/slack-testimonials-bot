@@ -15,6 +15,9 @@ standard application. Deploy these by running `make deploy`. To test that the
 deploy succeeded, you can hit `/test_new_testimonial` and verify that a new
 default testimonial is sent to the `#testimonials` channel.
 
+For access to the App Engine part of this application, ask #it for access to
+khan-testimonials-turtle GCP project.
+
 The slack client that listens for reactions to slack messages and updates vote
 totals (`listener.py`) runs on toby, using the configuration found
 [here](https://github.com/Khan/aws-config/blob/master/toby/etc/systemd/system/slack-testimonials-bot.service).
@@ -37,3 +40,8 @@ sudo systemctl restart slack-testimonials-bot
 
 To test that this deploy succeeded, upvote a recently high quality testimonial.
 This should eventually reshare that testimonial to the `#khan-academy` channel.
+
+== Fixing when it breaks
+
+If something is weird with the App Engine deployment, try going in to cloud
+storage and wiping the staging bucket in there.
