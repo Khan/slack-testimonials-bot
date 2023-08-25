@@ -19,7 +19,7 @@ secrets.py secrets_decrypt decrypt_secrets:
 		echo "secrets.py has been successfully created! You're done."; \
 	else \
 		echo "Get the password from here:"; \
-		echo "https://keepersecurity.com/vault/#detail/yv9Co30As1grN9mIUIRvpA"; \
+		echo "https://console.cloud.google.com/security/secret-manager/secret/slack_testimonials_bot_secrets_py_decrypt_password/versions?project=khan-academy"; \
 		openssl cast5-cbc -md md5 -d -in secrets.py.cast5 -out secrets.py; \
 	fi
 	@chmod 600 secrets.py
