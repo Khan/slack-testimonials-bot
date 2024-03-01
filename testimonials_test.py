@@ -1,6 +1,9 @@
 import json
-from mock import MagicMock
+import sys
+import unittest.mock
 import unittest
+
+sys.modules['secrets'] = unittest.mock.Mock()
 
 import testimonials
 

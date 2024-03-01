@@ -3,7 +3,7 @@ import datetime
 import json
 import logging
 import re
-import urlparse
+import urllib.parse
 
 import alertlib
 import humanize
@@ -155,8 +155,9 @@ def _query_for_channel_name_and_phrases(channel_name, phrases):
         query=query,
         count=QUERY_SIZE)
 
-    return filter(None,
-        map(_sanitize_search_results, resp['messages']['matches']))
+    return [r
+            for r in map(_sanitize_search_results, resp['messages']['matches'])
+            if r]
 
 
 def post_search_results(channel_id, search_phrase, requester):
@@ -174,8 +175,8 @@ def post_search_results(channel_id, search_phrase, requester):
 
         # Build a set of title_link's, which can be used to check uniqueness
         # of the testimonials
-        title_links = map(lambda t: t.get('title_link', None), testimonials)
-        title_link_set = set(filter(None, title_links))
+        title_links = [t.get('title_link', None) for t in testimonials]
+        title_link_set = set([tl for tl in title_links if tl])
 
         for testimonial in backup_testimonials[:room_left]:
             if testimonial.get('title_link', '') not in title_link_set:
@@ -319,8 +320,8 @@ def _parse_urlsafe_key_from_message(slack_message):
         return None
 
     title_link = slack_message["attachments"][0].get("title_link", None)
-    parsed_url = urlparse.urlparse(title_link)
-    query_dict = urlparse.parse_qs(parsed_url.query)
+    parsed_url = urllib.parse.urlparse(title_link)
+    query_dict = urllib.parse.parse_qs(parsed_url.query)
     vals = query_dict.get("key", [None])
 
     return vals[0]
