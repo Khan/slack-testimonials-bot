@@ -7,6 +7,7 @@ sys.modules['secrets'] = unittest.mock.Mock()
 
 import testimonials
 
+
 class TestTestimonials(unittest.TestCase):
     def test_search(self):
         """Tests the search functionality of the slack bot"""
@@ -68,6 +69,7 @@ class TestTestimonials(unittest.TestCase):
 
         self.assertIn("@%s" % requester, message_header)
         self.assertIn("no results found", message_header)
+
 
 if __name__ == '__main__':
     unittest.main()

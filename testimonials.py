@@ -36,7 +36,7 @@ class Testimonial(object):
     """Represents a single user's testimonial."""
 
     def __init__(self, urlsafe_key, date, body, share_allowed, author_name,
-            author_email=None):
+                 author_email=None):
         self.urlsafe_key = urlsafe_key
         self.date = date
         self.body = body
@@ -90,9 +90,10 @@ def _send_as_bot(channel, msg, attachments):
         attachments: slack message attachments, which are used for richly-
             formatted messages (see https://api.slack.com/docs/attachments)
     """
-    alertlib.Alert(msg).send_to_slack(channel,
-            sender=_TESTIMONIALS_SENDER, icon_emoji=_TESTIMONIALS_EMOJI,
-            attachments=attachments)
+    alertlib.Alert(msg).send_to_slack(
+        channel,
+        sender=_TESTIMONIALS_SENDER, icon_emoji=_TESTIMONIALS_EMOJI,
+        attachments=attachments)
 
 
 def _slack_api_call(
@@ -103,11 +104,11 @@ def _slack_api_call(
 
     try:
         response = json.loads(response_json)
-    except:
+    except Exception:
         # We're forgiving in the case of a slack API failure. We log the
         # failure and return None but don't crash the request.
         logging.error("Failed parsing response for %s API call. Response: %s" %
-                (method, response_json))
+                      (method, response_json))
         return None
 
     return response
@@ -120,7 +121,7 @@ def _sanitize_search_results(match):
     - Removes the fields at the bottom for voting/publishing
     - Fixes up the learner's name
     """
-    if not 'attachments' in match or len(match['attachments']) == 0:
+    if 'attachments' not in match or len(match['attachments']) == 0:
         return None
 
     testimonial = match['attachments'][0]
@@ -217,14 +218,14 @@ def _create_testimonial_slack_attachments(channel, msg, testimonial):
         fields.append({
             "title": "Share w/ the team internally...",
             "value": "Voting only :thumbsup: will send this to #khan-academy.",
-                    "short": True
+            "short": True,
         })
 
         if testimonial.share_allowed:
             fields.append({
                 "title": "...or share w/ our users.",
                 "value": ("By <%s|publishing on our stories page>." %
-                    testimonial.url),
+                          testimonial.url),
                 "short": True
             })
         else:
@@ -255,10 +256,10 @@ def _create_testimonial_slack_attachments(channel, msg, testimonial):
 
     return [{
         "fallback": ("Testimonial from %s: \"%s\"" %
-            (testimonial.author_name, testimonial.body)),
+                     (testimonial.author_name, testimonial.body)),
         "pretext": msg,
         "title": ("...from '%s' %s:" %
-            (testimonial.author_name, relative_date)),
+                  (testimonial.author_name, relative_date)),
         "title_link": testimonial.url,
         "text": "\"%s\"" % testimonial.body,
         "color": "#46a8bf",
@@ -281,7 +282,7 @@ def _send_testimonial_notification(channel, testimonial):
         msg = _PROMOTED_TESTIMONIAL_MESSAGE_PRETEXT
 
     attachments = _create_testimonial_slack_attachments(channel, msg,
-            testimonial)
+                                                        testimonial)
     _send_as_bot("#" + channel, msg, attachments)
 
 
@@ -315,7 +316,7 @@ def _parse_urlsafe_key_from_message(slack_message):
     testimonial identifier that travels w/ each slack message about the
     testimonial.
     """
-    if (not "attachments" in slack_message or
+    if ("attachments" not in slack_message or
             len(slack_message["attachments"]) == 0):
         return None
 
@@ -334,14 +335,14 @@ def _get_message_from_reaction(reaction_message):
         ts = reaction_message["item"]["ts"]
     except KeyError:
         logging.error("KeyError when trying to grab channel and ts from %s" %
-                reaction_message)
+                      reaction_message)
         return None
 
     response = _slack_api_call("conversations.history", channel=channel,
-            latest=ts, oldest=ts, inclusive=1, limit=1)
+                               latest=ts, oldest=ts, inclusive=1, limit=1)
 
     if (not response or
-            response["ok"] != True or
+            not response["ok"] or
             len(response["messages"]) != 1):
         logging.error(
                 "Unable to find message %s in channel %s. Response: '%s'" %
@@ -358,8 +359,9 @@ def add_emoji_reaction_buttons(slack_message):
     The bot's reaction emojis will show up as buttons under the message for
     others to click.
     """
-    response_thumbs_up = _slack_api_call("reactions.add", name="thumbsup",
-            channel=_TESTIMONIALS_CHANNEL_ID, timestamp=slack_message["ts"])
+    response_thumbs_up = _slack_api_call(
+        "reactions.add", name="thumbsup",
+        channel=_TESTIMONIALS_CHANNEL_ID, timestamp=slack_message["ts"])
 
     # TODO(kamens): add back the automatically-added downvote button when we
     # make use of it
@@ -382,14 +384,14 @@ def _is_specific_testimonial_announcement(slack_message, pretext):
 
 def is_new_testimonial_announcement(slack_message):
     """Return true if slack msg is a new testimonial announcement."""
-    return _is_specific_testimonial_announcement(slack_message,
-            _NEW_TESTIMONIAL_MESSAGE_PRETEXT)
+    return _is_specific_testimonial_announcement(
+        slack_message, _NEW_TESTIMONIAL_MESSAGE_PRETEXT)
 
 
 def is_promoted_testimonial_announcement(slack_message):
     """Return true if slack msg is a promoted testimonial announcement."""
-    return _is_specific_testimonial_announcement(slack_message,
-            _PROMOTED_TESTIMONIAL_MESSAGE_PRETEXT)
+    return _is_specific_testimonial_announcement(
+        slack_message, _PROMOTED_TESTIMONIAL_MESSAGE_PRETEXT)
 
 
 def maybe_get_reacted_to_testimonial_message(possible_reaction_message):
@@ -404,7 +406,7 @@ def maybe_get_reacted_to_testimonial_message(possible_reaction_message):
     if not possible_reaction_message:
         return None
 
-    if not "reaction" in possible_reaction_message:
+    if "reaction" not in possible_reaction_message:
         return None
 
     if possible_reaction_message["user"] == _TESTIMONIALS_SLACK_BOT_USER_ID:
