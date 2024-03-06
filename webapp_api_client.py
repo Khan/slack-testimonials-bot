@@ -3,8 +3,8 @@ import logging
 
 import base64
 import json
-import urllib2
 import os
+import urllib.request
 
 import bot_globals
 import secrets
@@ -65,16 +65,16 @@ def _webapp_graphql_mutation(mutation, variables, operation_name):
 
     # To pass CSRF checking, we randomly generate a key and include it as a
     # header and a cookie.
-    fkey = base64.urlsafe_b64encode(os.urandom(16))
+    fkey = base64.urlsafe_b64encode(os.urandom(16)).decode('utf-8')
     headers = {
             'Content-Type': 'application/json',
             'X-Ka-Fkey': fkey,
             'Cookie': 'fkey=%s' % fkey
     }
-    req = urllib2.Request(url, data, headers)
+    req = urllib.request.Request(url, data, headers)
     try:
-        urllib2.urlopen(req)
-    except Exception, e:
+        urllib.request.urlopen(req)
+    except Exception as e:
         # Gently fail if we ever fail to talk to the KA API: record the error,
         # return None, and let the listener live on.
         logging.error("Failed to send post to KA webapp API: %s" % e)

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """Tool for listening to testimonial-related activity in KA's slack channels.
 
 Listener connects to slack's real-time messaging API, keeps an eye on any
@@ -37,7 +39,7 @@ def handle_messages(messages):
                 testimonials.maybe_get_reacted_to_testimonial_message(message))
         if reacted_to_message:
             testimonials.send_updated_reaction_totals(message,
-                    reacted_to_message)
+                                                      reacted_to_message)
 
 
 def listen():
