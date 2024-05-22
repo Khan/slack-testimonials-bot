@@ -2,7 +2,7 @@
 Slack bot that shares and promotes awareness of KA's testimonials
 
 To run locally:
-* First run `make decrypt_secrets`, then follow the instructions
+* First run `make secrets.py`.
 * Then run `make deps`
 * Then run `make serve`
 
@@ -12,8 +12,10 @@ There's two separate things to deploy here:
 
 The api endpoints that send new testimonials to slack runs as a appengine
 standard application. Deploy these by running `make deploy`. To test that the
-deploy succeeded, you can hit `/test_new_testimonial` and verify that a new
-default testimonial is sent to the `#testimonials` channel.
+deploy succeeded, you can run:
+   curl http://khan-testimonials-turtle.appspot.com/test_new_testimonial
+and verify that a new default testimonial is sent to the `#testimonials`
+channel.
 
 For access to the App Engine part of this application, ask #it for access to
 khan-testimonials-turtle GCP project.

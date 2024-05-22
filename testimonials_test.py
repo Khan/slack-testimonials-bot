@@ -25,24 +25,23 @@ class TestTestimonials(unittest.TestCase):
             }
 
         def _mock_slack_api_call(method, token, **kwargs):
-            json_data = "{}"
             if NO_RESULTS_QUERY in kwargs['query']:
-                json_data = open('fixtures/no-results-search.json').read()
-
+                filename = 'fixtures/no-results-search.json'
             elif testimonials._MAIN_KA_CHANNEL in kwargs['query']:
                 self.assertIn(
                     testimonials._PROMOTED_TESTIMONIAL_MESSAGE_PRETEXT,
                     kwargs['query'])
-
-                json_data = open('fixtures/primary-room-search.json').read()
+                filename = 'fixtures/primary-room-search.json'
             elif testimonials._TESTIMONIALS_CHANNEL in kwargs['query']:
                 self.assertIn(
                     testimonials._NEW_TESTIMONIAL_MESSAGE_PRETEXT,
                     kwargs['query'])
+                filename = 'fixtures/secondary-room-search.json'
+            else:
+                return {}
 
-                json_data = open('fixtures/secondary-room-search.json').read()
-
-            return json.loads(json_data)
+            with open(filename) as f:
+                return json.load(f)
 
         testimonials._send_as_bot = _mock_send_as_bot
         testimonials._slack_api_call = _mock_slack_api_call

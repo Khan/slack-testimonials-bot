@@ -129,7 +129,7 @@ def _sanitize_search_results(match):
     testimonial['fields'] = []
 
     name = None
-    name_match = re.match("\.\.\.from '(\\w*)'", testimonial.get('title', ''))
+    name_match = re.match(r"\.\.\.from '(\\w*)'", testimonial.get('title', ''))
     if name_match:
         name = name_match.group(1)
 
@@ -453,7 +453,7 @@ def notify_testimonials_channel(testimonial):
     # that are very lengthy and spam the slack channel. we assume they'll give
     # up eventually, but in the meantime, we can at least not spam ourselves.
     author = testimonial.author_name.lower()
-    if author is 'derek ward' or author is 'kingstarz phoenix':
+    if author == 'derek ward' or author == 'kingstarz phoenix':
         return
 
     _send_testimonial_notification(_TESTIMONIALS_CHANNEL, testimonial)
