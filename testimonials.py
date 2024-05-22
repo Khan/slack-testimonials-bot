@@ -99,7 +99,7 @@ def _send_as_bot(channel, msg, attachments):
 def _slack_api_call(
         method, token=secrets.slack_testimonials_turtle_api_token, **kwargs):
     """Make a slack API call, passing in all kwargs as request data."""
-    client = slack.SlackClient(token)
+    client = slack.WebClient(token)
     response_json = client.api_call(method, **kwargs)
 
     try:

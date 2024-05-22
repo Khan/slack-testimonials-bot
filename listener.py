@@ -42,7 +42,7 @@ def handle_messages(messages):
 def listen():
     """Start listening to slack channels the Testimonials Turtle bot is in."""
     # STOPSHIP: better error handling so an exception doesn't crash the module
-    client = slack.SlackClient(secrets.slack_testimonials_turtle_api_token)
+    client = slack.WebClient(secrets.slack_testimonials_turtle_api_token)
     if not client.rtm_connect():
         logging.critical("Failed to connect to Slack RTM API, bailing.")
         return
