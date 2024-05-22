@@ -1,9 +1,3 @@
 [submodule "alertlib-src"]
 	path = alertlib-src
 	url = https://github.com/Khan/alertlib.git
-[submodule "python-slackclient-src"]
-	path = python-slackclient-src
-	url = https://github.com/slackhq/python-slackclient.git
-[submodule "humanize-src"]
-	path = humanize-src
-	url = https://github.com/jmoiron/humanize.git

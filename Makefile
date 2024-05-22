@@ -2,7 +2,7 @@ deps:
 	pip3 install -t lib -r requirements.txt
 
 serve: deps
-	python3 -m gunicorn -w 2 -b [::]:8080 --timeout 60 main:app --log-level debug
+	env PYTHONPATH=lib python3 -m gunicorn -w 2 -b [::]:8080 --timeout 60 main:app --log-level debug
 
 test:
 	python3 -m unittest testimonials_test
