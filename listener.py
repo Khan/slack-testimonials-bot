@@ -14,9 +14,6 @@ testimonial and send that upvote to KA's API for tracking.
 
 See https://api.slack.com/rtm for more info about slack's real-time API.
 """
-import sys
-sys.path.insert(0, "lib/")  # add third-party libs auto added by app engine
-
 import logging
 import time
 

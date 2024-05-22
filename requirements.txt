@@ -1,2 +1,11 @@
-Flask==1.0
+Flask==3.0.3
+gunicorn==22.0.0
+requests==2.32.2
+
+# Needed by our python-slackclient-src submodule
+future==0.15.2
+pytest==2.8.7
 websocket-client==0.35.0
+
+# Needed by our alertlib submodule
+six
