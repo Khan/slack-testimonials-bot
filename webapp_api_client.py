@@ -27,6 +27,7 @@ else:
 # To prevent it from being automatically deleted as a stale query, we
 # marked it as a 'mobile_native' query, even though it never appeared in a
 # mobile app.
+# sync-start:update-votes-mutation 1095670189 https://github.com/Khan/webapp/blob/master/deploy/manual_safelist.py
 UPDATE_VOTES_MUTATION = """
     mutation updateVotes(
       $storyKey:ID!,
@@ -44,6 +45,7 @@ UPDATE_VOTES_MUTATION = """
       }
     }
 """
+# sync-end:update-votes-mutation
 
 
 def _webapp_graphql_mutation(mutation, variables, operation_name):
