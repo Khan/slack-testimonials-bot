@@ -20,13 +20,6 @@ else:
     _WEBAPP_URL = "https://www.khanacademy.org"
 
 
-# NOTE(dhruv): This query was manually added to the graphql safelist in
-# production since we don't currently have an automated way of registering
-# these queries from this repository.
-
-# To prevent it from being automatically deleted as a stale query, we
-# marked it as a 'mobile_native' query, even though it never appeared in a
-# mobile app.
 # sync-start:update-votes-mutation 1095670189 https://github.com/Khan/webapp/blob/master/deploy/manual_safelist.py
 UPDATE_VOTES_MUTATION = """
     mutation updateVotes(
