@@ -23,6 +23,13 @@ khan-testimonials-turtle GCP project.
 The slack client that listens for reactions to slack messages and updates vote
 totals (`listener.py`) runs on toby, using the configuration found
 [here](https://github.com/Khan/aws-config/blob/master/toby/etc/systemd/system/slack-testimonials-bot.service).
+
+---------------
+NOTE NOTE NOTE: This functionality is broken and has been deleted.
+NOTE NOTE NOTE: The below is purely information until listener.py is fixed
+NOTE NOTE NOTE: to use a more modern slack api.
+---------------
+
 To update that code, follow these steps:
 
 ```

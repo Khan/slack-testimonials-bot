@@ -16,6 +16,18 @@ import testimonials
 app = flask.Flask(__name__)
 
 
+def _require_secret(func):
+    def wrapper():
+        actual_secret = request.form.get('auth_secret', '<not found>')
+        expected_secret = secrets.slack_testimonials_turtle_api_token
+        # TODO(csilvers): use secrests.compare_digest().  This will
+        # require renaming our own secrets.py.
+        if actual_secret != expected_secret:
+            return "Access denied\n", 401
+        return func()
+    return wrapper
+
+
 def _get_fake_testimonial():
     """Return a fake testimonial for use in hacky manual testing."""
     testimonial = testimonials.Testimonial.fake_instance()
@@ -29,6 +41,7 @@ def _get_fake_testimonial():
 
 # TODO(kamens): separate below hacky tests into unit tests
 @app.route('/test_new_testimonial')
+@_require_secret
 def test_new_testimonial():
     """Test sending notification about a new fake testimonial."""
     testimonials.notify_testimonials_channel(_get_fake_testimonial())
@@ -36,6 +49,7 @@ def test_new_testimonial():
 
 
 @app.route('/test_promote_testimonial')
+@_require_secret
 def test_promote_testimonial():
     """Test sending promoted notification about a favorite fake testimonial."""
     testimonials.promote_to_main_channel(_get_fake_testimonial())
@@ -43,6 +57,7 @@ def test_promote_testimonial():
 
 
 @app.route('/api/new_testimonial', methods=['POST'])
+@_require_secret
 def new_testimonial():
     """Send notification about a newly created testimonial.
 
@@ -55,6 +70,7 @@ def new_testimonial():
 
 
 @app.route('/api/promote_testimonial', methods=['POST'])
+@_require_secret
 def promote_testimonial():
     """Send a 'promoted' testimonial notification (to KA's main slack channel).
 
@@ -68,6 +84,7 @@ def promote_testimonial():
 
 
 @app.route('/api/testimonial_search', methods=['POST'])
+@_require_secret
 def test_fetch_testimonial():
     """Test sending promoted notification about a favorite fake testimonial."""
     channel_id = request.form['channel_id']
