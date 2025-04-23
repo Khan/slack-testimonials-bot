@@ -43,7 +43,7 @@ def _get_fake_testimonial():
 
 
 # TODO(kamens): separate below hacky tests into unit tests
-@app.route('/test_new_testimonial')
+@app.route('/test_new_testimonial', methods=['POST'])
 @_require_secret
 def test_new_testimonial():
     """Test sending notification about a new fake testimonial."""
@@ -51,7 +51,7 @@ def test_new_testimonial():
     return 'OK'
 
 
-@app.route('/test_promote_testimonial')
+@app.route('/test_promote_testimonial', methods=['POST'])
 @_require_secret
 def test_promote_testimonial():
     """Test sending promoted notification about a favorite fake testimonial."""
