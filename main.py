@@ -5,6 +5,8 @@ testimonial emoji reaction information to KA's webapp server (the source of
 truth for all testimonials), and to promote favorite testimonials to slack
 channels where all employees hang out and will be inspired ;).
 """
+import functools
+
 import flask
 from flask import request
 
@@ -17,6 +19,7 @@ app = flask.Flask(__name__)
 
 
 def _require_secret(func):
+    @functools.wraps(func)
     def wrapper():
         actual_secret = request.form.get('auth_secret', '<not found>')
         expected_secret = secrets.slack_testimonials_turtle_api_token
