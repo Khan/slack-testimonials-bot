@@ -13,7 +13,7 @@ deploy: secrets.py
 
 # To create secrets.py.
 secrets.py:
-	echo "slack_alertlib_api_token = '`gcloud --project khan-academy secrets versions access latest --secret districts_slack_token`'" > "$@"
+	echo "slack_alertlib_api_token = '`gcloud --project khan-academy secrets versions access latest --secret Slack__API_token_for_alertlib`'" > "$@"
 	echo "slack_testimonials_turtle_api_token = '`gcloud --project khan-academy secrets versions access latest --secret Slack__API_token_for_Testimonials_Turtle`'" >> "$@"
 	echo "slack_testimonials_search_api_token = '`gcloud --project khan-academy secrets versions access latest --secret Slack_API_token__for_search__for_Testimonials_Turtle`'" >> "$@"
 	echo "slack_testimonials_slash_command_token = '`gcloud --project khan-academy secrets versions access latest --secret Slack__API_token__for_slash_commands__for_Testimonials_Turtle`'" >> "$@"
